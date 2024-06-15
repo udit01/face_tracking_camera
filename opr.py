@@ -50,7 +50,10 @@ def find_face(image_to_check, max_target_distance):
 
         cv2.circle(image_to_check, (int(width/2), int(height/2)), int(max_target_distance) , color, 2)    #draw circle
 
+        # print("FOUND FACE \n ... ")
         return [True, image_to_check, distance_from_center_X, distance_from_center_Y, locked]
 
     else:
+        # print("COUDN't find  FACE \n ... ")
+
         return [False]
