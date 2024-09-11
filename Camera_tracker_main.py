@@ -241,12 +241,15 @@ class App(QWidget):
                 else:
                     processed_img = self.image_process(img) #process image (check for faces and draw circle and cross)
             else:                             #if arduino  not connected
-                processed_img = img           #don't process image
+                # processed_img = img           #don't process image
+                # process image even if not connected to aurdino
+                processed_img = self.image_process(img) #process image (check for faces and draw circle and cross)
+
 
             self.update_GUI(processed_img)    #update image in window
             cv2.waitKey(0)                    #no delay between frames
-
-            self.move_servos() #move servos
+            # I don't want to move servos right now
+            # self.move_servos() #move servos
 
             if (not self.rec):     #allows while loop to stop if pause button pressed
                 break
