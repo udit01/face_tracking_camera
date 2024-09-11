@@ -2,6 +2,7 @@ import cv2
 import math
 import common
 import numpy as np
+from scipy.spatial import KDTree
 from model.DBFace import DBFace
 from dbface_main import detect
 import common
@@ -19,7 +20,7 @@ def remap(value_to_map, new_range_min, new_range_max, old_range_min, old_range_m
 
     return remapped_val
 
-def plot_ellipse_from_bbox(frame, bbox_coord):
+def plot_ellipse_from_bbox(frame, bbox, col=(255, 0, 0)):
     # plot an ellipse/cicle from the bbox coords
     # Args: 
     # frame, (center-xy) , (maj,min)-ax-len, rotAngle in anticlockwise dir, startAngleArc, endAngleArc, .. 
@@ -30,8 +31,22 @@ def plot_ellipse_from_bbox(frame, bbox_coord):
     col = (255, 0, 0) # Blue color because BGR
     cv2.ellipse(frame, rect, col, 2 )
     # Now draw the 4 end points... 
-    
-    pass
+    rect_points = cv2.boxPoints(rect)
+    rect_points = np.int0(rect_points)  # Convert to integer coordinates
+    def midpoint(p1, p2):
+        return ((p1[0] + p2[0]) // 2, (p1[1] + p2[1]) // 2)
+    mid_pts = []
+    for i in range(4):
+        pt1 = rect_points[i]
+        pt2 = rect_points[(i + 1) % 4]  # The next point (wrapping around)
+        
+        mid_pt = midpoint(pt1, pt2)
+        mid_pts.append(mid_pt)
+        # Draw the midpoint as a small circle
+        # Color same as that orignal ellipse color?
+        cv2.circle(frame, mid_pt, radius=5, color=col, thickness=-1)  # Green midpoint
+
+    return np.array(mid_pts)
 
 def find_face(image_to_check, max_target_distance, model, yolo_models):
     # gray = cv2.cvtColor(image_to_check, cv2.COLOR_BGR2GRAY) #convert image to black and white
@@ -88,11 +103,57 @@ def find_face(image_to_check, max_target_distance, model, yolo_models):
         for obj in objs:
             common.drawbbox(image_to_check, obj)
         
+        all_midpoints = []
         for results_yolo in yolo_res_list:
             for i, res in enumerate(results_yolo):
                 # print("------------yolo res--------")
                 image_to_check = res.plot(img=image_to_check)
+                # Now use the custom plotting function to plot the ellipess instead of retangbles, and fix io later
+                mid_pts = plot_ellipse_from_bbox()
+                all_midpoints.append(mid_pts)
             # print("FOUND FACE \n ... ")
+        # all_midpoints_array = np.vstack(all_midpoints)
+
+        # # Use KDTree for fast nearest neighbor search
+        # kdtree = KDTree(all_midpoints_array)
+
+        # # Find the closest point for each point in the array
+        # closest_points = []
+        # for i, point in enumerate(all_midpoints_array):
+        #     dist, idx = kdtree.query(point, k=2)  # k=2 because the closest point to itself is included
+        #     closest_points.append(all_midpoints_array[idx[1]])  # idx[1] is the closest "other" point
+        # Convert the list to a stacked array (K*4 x 2)
+        all_midpoints_array = np.vstack(all_midpoints)
+
+        # Initialize an empty list to store the closest points for each box
+        closest_points_per_box = []
+
+        # Loop through each box's midpoints and exclude its points for the nearest neighbor search
+        for i in range(K):
+            # Midpoints of the current box
+            current_midpoints = all_midpoints[i]
+            
+            # Combine all other midpoints except the current box's
+            other_midpoints = np.vstack([all_midpoints[j] for j in range(K) if j != i])
+            
+            # Create a KDTree for the other midpoints
+            kdtree = KDTree(other_midpoints)
+            
+            # Find the closest point in the "other midpoints" for each point in the current box
+            closest_points_for_current = []
+            for point in current_midpoints:
+                dist, idx = kdtree.query(point, k=1)  # Find the closest point
+                closest_points_for_current.append(other_midpoints[idx])  # Append the closest point
+            
+            # Store the closest points for the current box
+            closest_points_per_box.append(np.array(closest_points_for_current))
+            for j in range(4):
+                pt1 = tuple(current_midpoints[j])
+                pt2 = tuple(closest_points_for_current[j])
+                cv2.line(img, pt1, pt2, (0, 255, 0), thickness=1)  # Green line
+            # Now `closest_points_per_box` contains the closest points for each box, 
+            # excluding its own midpoints
+
         return [True, image_to_check, distance_from_center_X, distance_from_center_Y, locked]
 
     else:
