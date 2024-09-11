@@ -8,7 +8,12 @@ import random
 import pickle
 
 import cv2
+import torch
+from model.DBFace import DBFace
+from ultralytics import YOLO
 
+HAS_CUDA = torch.cuda.is_available()
+print(f"HAS_CUDA = {HAS_CUDA}")
 
 class App(QWidget):
 
@@ -52,9 +57,17 @@ class App(QWidget):
 
         self.face_detected = False     #define if a face is detected
         self.target_locked = False     #define if detected face is close enough to the center of the captured image
-        self.max_target_distance = 40  #minimum distance between face/center of image for setting target locked
+        self.max_target_distance = 50  #minimum distance between face/center of image for setting target locked
         self.max_empty_frame = 50      #number of empty frame (no face detected) detected before starting roaming
         self.empty_frame_number = self.max_empty_frame   #current empty frame count
+
+        self.dbface = DBFace()
+        self.dbface.eval()
+        if HAS_CUDA:
+            self.dbface.cuda()
+        self.dbface.load("model/dbface.pth")
+
+        self.yolo_models = [YOLO("yolov8n.pt"), YOLO("yolov8n-seg"), YOLO("yolov8n-pose")]
 
         self.ard = comm_ard.ard_connect(self)     #create object allowing communicationn with arduino
         self.initUI()    #set up UI( see below )
@@ -327,7 +340,7 @@ class App(QWidget):
     def image_process(self, img):  #handle the image processing
         #to add later : introduce frame scipping (check only 1 every nframe)
 
-        processed_img = opr.find_face(img, self.max_target_distance)  # try to find face and return processed image
+        processed_img = opr.find_face(img, self.max_target_distance, self.dbface, self.yolo_models)  # try to find face and return processed image
         # if face found during processing , the data return will be as following :
         #[True, image_to_check, distance_from_center_X, distance_from_center_Y, locked]
         #if not it will just retun False

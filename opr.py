@@ -1,5 +1,11 @@
 import cv2
 import math
+import common
+import numpy as np
+from model.DBFace import DBFace
+from dbface_main import detect
+import common
+
 
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
@@ -13,10 +19,23 @@ def remap(value_to_map, new_range_min, new_range_max, old_range_min, old_range_m
 
     return remapped_val
 
-def find_face(image_to_check, max_target_distance):
-    gray = cv2.cvtColor(image_to_check, cv2.COLOR_BGR2GRAY) #convert image to black and white
+def find_face(image_to_check, max_target_distance, model, yolo_models):
+    # gray = cv2.cvtColor(image_to_check, cv2.COLOR_BGR2GRAY) #convert image to black and white
     # faces = face_cascade.detectMultiScale(gray, 1.2, 5)     #look for faces
-    faces = face_cascade.detectMultiScale(gray, 1.2, 5)     #look for faces
+    yolo_res_list = []
+    for mod in yolo_models:
+        yolo_res_list.append(mod(image_to_check, verbose=False))
+
+    objs = detect(model, image_to_check)
+
+    # Objects is a list of tuples (bbox, landmarks)
+    # I don't know but assuming that the they are already sorted in descending order of scores. 
+    faces = []
+    for bbox in objs:
+        x1, y1 = bbox.x, bbox.y
+        w, h = bbox.width, bbox.height
+        faces.append( [x1, y1, w, h])
+    # Constructing an object like before 
     print("In opr printing faces:=-----")
     print(faces)
 
@@ -52,7 +71,14 @@ def find_face(image_to_check, max_target_distance):
 
         cv2.circle(image_to_check, (int(width/2), int(height/2)), int(max_target_distance) , color, 2)    #draw circle
 
-        # print("FOUND FACE \n ... ")
+        for obj in objs:
+            common.drawbbox(image_to_check, obj)
+        
+        for results_yolo in yolo_res_list:
+            for i, res in enumerate(results_yolo):
+                # print("------------yolo res--------")
+                image_to_check = res.plot(img=image_to_check)
+            # print("FOUND FACE \n ... ")
         return [True, image_to_check, distance_from_center_X, distance_from_center_Y, locked]
 
     else:
