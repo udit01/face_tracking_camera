@@ -19,6 +19,20 @@ def remap(value_to_map, new_range_min, new_range_max, old_range_min, old_range_m
 
     return remapped_val
 
+def plot_ellipse_from_bbox(frame, bbox_coord):
+    # plot an ellipse/cicle from the bbox coords
+    # Args: 
+    # frame, (center-xy) , (maj,min)-ax-len, rotAngle in anticlockwise dir, startAngleArc, endAngleArc, .. 
+    # cv.ellipse(img,(256,256),(100,50),0,0,180,255,-1)
+    # There's an alternate function which can draw from bboxes. 
+    # Docs: https://docs.opencv.org/4.x/d6/d6e/group__imgproc__draw.html#ga28b2267d35786f5f890ca167236cbc69
+    rect = ((cx, cy), (w, h), 0)
+    col = (255, 0, 0) # Blue color because BGR
+    cv2.ellipse(frame, rect, col, 2 )
+    # Now draw the 4 end points... 
+    
+    pass
+
 def find_face(image_to_check, max_target_distance, model, yolo_models):
     # gray = cv2.cvtColor(image_to_check, cv2.COLOR_BGR2GRAY) #convert image to black and white
     # faces = face_cascade.detectMultiScale(gray, 1.2, 5)     #look for faces
