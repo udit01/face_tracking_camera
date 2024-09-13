@@ -6,7 +6,7 @@ import opr
 import comm_ard
 import random
 import pickle
-
+import copy
 import cv2
 import torch
 from model.DBFace import DBFace
@@ -61,13 +61,34 @@ class App(QWidget):
         self.max_empty_frame = 50      #number of empty frame (no face detected) detected before starting roaming
         self.empty_frame_number = self.max_empty_frame   #current empty frame count
 
+        # Later this will be modified in the GUI just the init values
+        # Relaxed constraints in the beginning
+        threshold_dict = {}    
+        # Number of objects to display
+        threshold_dict['max-objects'] = 10
+        threshold_dict['confidence-threshold'] = 0.1
+        # Line colors
+        threshold_dict['short-rgb'] = (1, 128, 1) # Green
+        threshold_dict['mid-rgb'] = (160, 32, 240) # Purple
+        threshold_dict['long-rgb'] = (255, 219, 88) # Mustard
+        
+        # Best to set these as ranges not exact values:
+        threshold_dict['line-color-mid-low'] = 0.25
+        threshold_dict['line-color-mid-high'] = 0.45
+        self.threshold_dict = threshold_dict
+
         self.dbface = DBFace()
         self.dbface.eval()
         if HAS_CUDA:
             self.dbface.cuda()
         self.dbface.load("model/dbface.pth")
 
-        self.yolo_models = [YOLO("yolov8n.pt"), YOLO("yolov8n-seg"), YOLO("yolov8n-pose")]
+        # Instead of using 3 models for showcasing, using 1 model for req
+        # self.yolo_models = [YOLO("yolov8n.pt"), YOLO("yolov8n-seg"), YOLO("yolov8n-pose")]
+        self.yolo_models = [YOLO("yolov8n.pt")]
+
+        # Intialize the ranom colors otherwise 
+        opr.make_random_colors_array(num_colors=20)
 
         self.ard = comm_ard.ard_connect(self)     #create object allowing communicationn with arduino
         self.initUI()    #set up UI( see below )
@@ -105,6 +126,7 @@ class App(QWidget):
         self.ConnectButton.clicked.connect(self.connect)
         self.UpdateButton.clicked.connect(self.update_angles)
 
+        # What are the values in here need to be checked and confirmed according to our setup
         self.load_init_file()
         self.update_angles() #update angle method
 
@@ -146,7 +168,6 @@ class App(QWidget):
         self.CameraID, self.LED_ON]
         with open('init.pkl', 'wb') as init_file:
             pickle.dump(init_settings, init_file)
-
 
     def connect(self):    #set COM port from text box if arduino not already connected
         if(not self.is_connected):
@@ -232,7 +253,6 @@ class App(QWidget):
         self.target_tilt = random.uniform(self.min_tilt, self.max_tilt)
         self.target_pan = random.uniform(self.min_pan, self.max_pan)
 
-
     def toggle_recording(self):
         if(self.rec):
             self.rec = False                   #stop recording
@@ -314,6 +334,7 @@ class App(QWidget):
 
 
     def roam(self):
+        # This makes the robot go jittery in that case, these pan and tilt need to be adjusted 
         if(self.roam_pause_count < 0 ):      #if roam count inferior to 0
 
             self.roam_pause_count = self.roam_pause                                        #reset roam count
@@ -339,25 +360,31 @@ class App(QWidget):
 
     def image_process(self, img):  #handle the image processing
         #to add later : introduce frame scipping (check only 1 every nframe)
-
-        processed_img = opr.find_face(img, self.max_target_distance, self.dbface, self.yolo_models)  # try to find face and return processed image
+        original_image = copy.deepcopy(img)
+        processed_img = opr.find_face(img, self.max_target_distance, self.dbface)  # try to find face and return processed image
         # if face found during processing , the data return will be as following :
         #[True, image_to_check, distance_from_center_X, distance_from_center_Y, locked]
-        #if not it will just retun False
+        #if not it will just return False
+        # 
 
         if(processed_img[0]):             #if face found
             self.face_detected = True
             self.empty_frame_number = self.max_empty_frame  #reset empty frame count
             self.target_locked = processed_img[4]
             self.calculate_camera_move(processed_img[2], processed_img[3])  # calculate new targets depending on distance between face and image center
+            # Add yolo objects 
+            processed_img[1] = opr.visualize_objects(original_image, processed_img[1], self.yolo_models, self.threshold_dict)
+            # Return the shiny new image here. 
             return processed_img[1]
         else:
             self.face_detected = False
             self.target_locked = False
+            # Need to check if else and roam, and if that impedes the return. 
             if(self.empty_frame_number> 0):
                 self.empty_frame_number -= 1  #decrease frame count until it equal 0
             else:
                 self.roam()              #then roam
+            img = opr.visualize_objects(original_image, img, self.yolo_models, self.threshold_dict)
             return img
 
 
