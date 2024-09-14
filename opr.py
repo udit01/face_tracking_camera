@@ -44,7 +44,7 @@ def remap(value_to_map, new_range_min, new_range_max, old_range_min, old_range_m
 
     return remapped_val
 
-def plot_ellipse_from_bbox(frame, xywh, col=(255, 0, 0)  ):
+def plot_ellipse_from_bbox(frame, xywh, col=(255, 0, 0), thickness=4  ):
     # plot an ellipse/cicle from the bbox coords
     # Args: 
     # frame, (center-xy) , (maj,min)-ax-len, rotAngle in anticlockwise dir, startAngleArc, endAngleArc, .. 
@@ -54,7 +54,7 @@ def plot_ellipse_from_bbox(frame, xywh, col=(255, 0, 0)  ):
     cx, cy, w, h = xywh.cpu().detach().numpy()
     rect = ((cx, cy), (w, h), 0)
     # col = (255, 0, 0) # Blue color because BGR
-    cv2.ellipse(frame, rect, col, 4 )
+    cv2.ellipse(frame, rect, col, thickness=thickness )
     # Now draw the 4 end points... 
     rect_points = cv2.boxPoints(rect)
     rect_points = np.int0(rect_points)  # Convert to integer coordinates
@@ -72,6 +72,7 @@ def plot_ellipse_from_bbox(frame, xywh, col=(255, 0, 0)  ):
         mid_pts.append(mid_pt)
         # Draw the midpoint as a small circle
         # Color same as that orignal ellipse color?
+        # What will be the color of the points?
         cv2.circle(frame, mid_pt, radius=10, color=col, thickness=-1)  # Green midpoint
 
     return np.array(mid_pts)
@@ -148,12 +149,13 @@ def visualize_objects(original_image, processed_image, yolo_models, threshold_di
         # print("------printing len of results yolo, (it's 1 as expected) to see how the results are ")
         # print(len(results_yolo))
         # print(results_yolo[0].boxes)
+        # What should be the color of the ellipses?
         for res in results_yolo:
             # Only enumerate on TOP MAX OBJECTS Then further constrain by confidence threshold
             boxes_obj = res.boxes
             for i, xywh in enumerate(boxes_obj.xywh[:threshold_dict['max-objects']]):
                 if(boxes_obj.conf[i]>=threshold_dict['confidence-threshold']):
-                    mid_pts = plot_ellipse_from_bbox(processed_image, xywh, col=get_color(i))
+                    mid_pts = plot_ellipse_from_bbox(processed_image, xywh, col=get_color(i), thickness=threshold_dict['ellipse-line-thickness'])
                     all_midpoints.append(mid_pts)
 
         # # Use KDTree for fast nearest neighbor search
@@ -200,7 +202,7 @@ def visualize_objects(original_image, processed_image, yolo_models, threshold_di
                 pt1 = tuple(current_midpoints[j])
                 pt2 = tuple(closest_points_for_current[j])
                 col_to_plot = get_line_color(closest_distance_list[j], threshold_dict, image_dimension)
-                cv2.line(processed_image, pt1, pt2, col_to_plot, thickness=1)  # Green line
+                cv2.line(processed_image, pt1, pt2, col_to_plot, thickness=threshold_dict['connecting-line-thickness'])  # Selected Color
             # Now `closest_points_per_box` contains the closest points for each box, 
             # excluding its own midpoints
     

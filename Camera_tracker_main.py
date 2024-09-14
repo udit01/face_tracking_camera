@@ -1,6 +1,6 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget
-from PyQt5.QtGui import QIcon, QPixmap, QImage
+from PyQt5.QtWidgets import QApplication, QWidget, QColorDialog
+from PyQt5.QtGui import QIcon, QPixmap, QImage, QColor
 from PyQt5.uic import loadUi
 import opr
 import comm_ard
@@ -75,6 +75,10 @@ class App(QWidget):
         # Best to set these as ranges not exact values:
         threshold_dict['line-color-mid-low'] = 0.25
         threshold_dict['line-color-mid-high'] = 0.45
+
+        threshold_dict['ellipse-line-thickness']   = 4
+        threshold_dict['connecting-line-thickness'] = 3
+
         self.threshold_dict = threshold_dict
 
         self.dbface = DBFace()
@@ -87,14 +91,16 @@ class App(QWidget):
         # self.yolo_models = [YOLO("yolov8n.pt"), YOLO("yolov8n-seg"), YOLO("yolov8n-pose")]
         self.yolo_models = [YOLO("yolov8n.pt")]
 
-        # Intialize the ranom colors otherwise 
+        self.selected_color = QColor(0,0,255)
+
+        # Initialize the random colors otherwise 
         opr.make_random_colors_array(num_colors=20)
 
         self.ard = comm_ard.ard_connect(self)     #create object allowing communicationn with arduino
         self.initUI()    #set up UI( see below )
 
     def initUI(self):     #UI related stuff
-        self.setWindowTitle('LFK Tracker')              #set window title
+        self.setWindowTitle('Unbinding Bodies')              #set window title
         self.label = self.ui.label                      #set label (it will be used to display the captured images)
         self.QuitButton = self.ui.QuitButton            #set quit button
         self.PauseButton = self.ui.PauseButton          #set pause button
@@ -124,13 +130,101 @@ class App(QWidget):
         self.PauseButton.clicked.connect(self.toggle_recording)  #bind pause button to pause method
         self.Manual_checkbox.stateChanged.connect(self.set_manual_mode)  #bla bla bla
         self.ConnectButton.clicked.connect(self.connect)
+        # Here the variables are updated!! All the new varaibles updates will go in there
         self.UpdateButton.clicked.connect(self.update_angles)
+
+        # Full screen button
+        self.FullScreenButton = self.ui.FullScreenButton
+        self.FullScreenButton.clicked.connect(self.fullScreen)
+
+        # These buttons are just taken in here, no functionality is added
+        self.ShortMinTextField = self.ui.ShortMinTextField
+        self.MidMinTextField = self.ui.MidMinTextField
+        self.MidMaxTextField = self.ui.MidMaxTextField
+        self.LongMaxTextField = self.ui.LongMaxTextField
+
+        self.short_rgb_color = QColor(200,0,0)
+        self.mid_rgb_color = QColor(0,200,0)
+        self.long_rgb_color = QColor(0,0,200)
+
+        self.shortRGBbutton = self.ui.ShortRGBButton
+        self.midRGBbutton = self.ui.MidRGBButton
+        self.longRGBbutton = self.ui.LongRGBButton
+        
+        self.shortRGBbutton.clicked.connect( lambda: self.showColorDialog(len_code=0) )
+        self.midRGBbutton.clicked.connect( lambda: self.showColorDialog(len_code=1) )
+        self.longRGBbutton.clicked.connect( lambda: self.showColorDialog(len_code=2) )
+        
+        # SAVE AND LOAD THESE SERVO VALUES TO AND FROM PICKLE LATER
+        self.Servo1Min = self.ui.Servo1Min
+        self.Servo1Max = self.ui.Servo1Max
+
+        self.Servo2Min = self.ui.Servo2Min
+        self.Servo2Max = self.ui.Servo2Max
+        
+        self.Servo3Min = self.ui.Servo3Min
+        self.Servo3Max = self.ui.Servo3Max
+
+        self.Servo4Min = self.ui.Servo4Min
+        self.Servo4Max = self.ui.Servo4Max
+        
+        self.Servo5Min = self.ui.Servo5Min
+        self.Servo5Max = self.ui.Servo5Max
+
+        self.MaxObjectsTextField = self.ui.MaxObjectsTextField
+        self.ConfidenceThresholdTextField = self.ui.ConfidenceThresholdTextField
+        self.EllipseThicknessTextField = self.ui.EllipseThicknessTextField
+        self.LineThicknessTextField = self.ui.LineThicknessTextField
 
         # What are the values in here need to be checked and confirmed according to our setup
         self.load_init_file()
         self.update_angles() #update angle method
 
         self.record()  #start recording
+    
+    def fullScreen(self, targetWidget):
+        # def switch_fullscreen(targetWidget):
+        if targetWidget.isFullScreen():
+            targetWidget.showNormal()
+            print("Showing normal.")
+        else:
+            targetWidget.showFullScreen()
+            print("Showing full-screen.")
+
+
+    # TO get the color input from the USER
+    def showColorDialog(self, len_code=0):
+        # TODO: Encapsulate in a try except for final version.
+        # get color from user
+        selected_color = QColorDialog.getColor(self.selected_color, self)
+        # did user cancel operation ?
+        if not selected_color.isValid():
+            # print("----- invalid color selected----")
+            return
+        # update stylesheet
+        # self.frame.setStyleSheet(
+        #     "QWidget { background-color: %s}" % selected_color.name())
+        # # grab RBG values and print them to terminal
+        # rgb = (selected_color.red(),
+        #     selected_color.green(),
+        #     selected_color.blue())
+        bgr = (selected_color.blue(),
+            selected_color.green(),
+            selected_color.red())
+        print("COLOR BGR---------")
+        print(bgr)
+        # set `selected_color`as an instance variable so you can retrieve it later
+        # self.selected_color = selected_color
+        if len_code == 0 :
+            self.short_rgb_color = selected_color
+            self.threshold_dict['short-rgb'] = bgr
+        elif len_code == 1 :
+            self.mid_rgb_color = selected_color
+            self.threshold_dict['mid-rgb'] = bgr
+        elif len_code == 2 :
+            self.long_rgb_color = selected_color
+            self.threshold_dict['long-rgb'] = bgr
+        return 
 
     def load_init_file(self):
         #this method will allow to reload the latest values entered in text boxes even after closing the software
@@ -178,6 +272,13 @@ class App(QWidget):
                 self.COMConnectLabel.setText(".................... Cant connect to port : " + port + " .....................")
 
     def update_angles(self):  #update variables from text boxes
+        
+        def get_norm(x):
+            # Then it's a percentage and needs to be divided by 100
+            if(x > 1):
+                return get_norm(x/100.0) # keep dividing by 100 till you reach 0 to 1
+            return x
+
         try:
             self.InvertTilt = self.InvertTilt_checkbox.isChecked()
             self.InvertPan = self.InvertPan_checkbox.isChecked()
@@ -203,9 +304,33 @@ class App(QWidget):
                 self.min_tilt = int(self.MinTiltlineEdit.text())
                 self.max_tilt = int(self.MaxTiltlineEdit.text())
 
+            # Connecting 
+            self.threshold_dict['line-color-short-low']      = get_norm( float( self.ShortMinTextField.text() ) )
+            self.threshold_dict['line-color-mid-low']        = get_norm( float( self.MidMinTextField.text() ) )
+            self.threshold_dict['line-color-mid-high']       = get_norm( float( self.MidMaxTextField.text() ) )
+            self.threshold_dict['line-color-long-high']      = get_norm( float( self.LongMaxTextField.text() ) )
+            self.threshold_dict['max-objects']               =         (   int( self.MaxObjectsTextField.text() ) )
+            self.threshold_dict['confidence-threshold']      = get_norm( float( self.ConfidenceThresholdTextField.text() ) )
+            self.threshold_dict['ellipse-line-thickness']    =         (   int( self.EllipseThicknessTextField.text() ) )
+            self.threshold_dict['connecting-line-thickness'] =         (   int( self.LineThicknessTextField.text() ) )
+
+            # Set these servo values later and save and load them from pickle
+            # value to set  = self.Servo1Min
+            # value to set  = self.Servo1Max
+            # value to set  = self.Servo2Min
+            # value to set  = self.Servo2Max
+            # value to set  = self.Servo3Min
+            # value to set  = self.Servo3Max
+            # value to set  = self.Servo4Min
+            # value to set  = self.Servo4Max
+            # value to set  = self.Servo5Min
+            # value to set  = self.Servo5Max
+
+
             self.save_init_file()
             print("values updated")
-        except:
+        except Exception as e:
+            print(e)
             print("can't update values")
 
     def mouseMoveEvent(self, event):
