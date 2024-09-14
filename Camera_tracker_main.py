@@ -15,23 +15,28 @@ from ultralytics import YOLO
 HAS_CUDA = torch.cuda.is_available()
 print(f"HAS_CUDA = {HAS_CUDA}")
 
+# TODO : Encapsulate all things inside try catch, to deal with exceptions. 
+# TODO : Run from a main/bash thread , which will detect if the program has ended and re-open that, and keep doing that in a for loop
+
 class App(QWidget):
 
     def __init__(self):
         super().__init__()
 
-        self.ui = loadUi('tracking.ui', self)    #Load .ui file that define the window layout(buttons, tick boxoex...)
+        self.ui = loadUi('tracking.ui', self)    #Load .ui file that define the window layout(buttons, tick boxes...)
 
         self.setMouseTracking(True)    #allow mouse tracking(use during manual mode)
         self.manual_mode = False       #set manual mode to false to start in tracking face mode
         self.LED_ON = True             #set LED on mode
         self.CameraID = 0              #define camera ID, first camera = ID 0, second ID 1 and so on
 
+        # TODO : Set optimal values for latte panda, so that it can process comfortably, maybe it can process bigger
+
         self.rec = True                #allows to start camera recording
         self.cap = cv2.VideoCapture(self.CameraID)  #define open CV camera recording
         self.cap.set(3, 960)                        #set capture width
         self.cap.set(4, 540)                        #set capture height
-        #The bigger the image is, the longer the processing is goint to take to process it
+        #The bigger the image is, the longer the processing is going to take to process it
         ## My computer is a bit shit so I kept it quite small .
 
         self.min_tilt = 22          #minimum tilt angle in degree (up/down angle)
@@ -89,7 +94,10 @@ class App(QWidget):
 
         # Instead of using 3 models for showcasing, using 1 model for req
         # self.yolo_models = [YOLO("yolov8n.pt"), YOLO("yolov8n-seg"), YOLO("yolov8n-pose")]
-        self.yolo_models = [YOLO("yolov8n.pt")]
+        # self.yolo_models = [YOLO("yolov8n-seg"), YOLO("yolov8n-pose")]
+        # self.yolo_models = [YOLO("yolov8x-seg")]
+        self.yolo_models = [YOLO("yolov8n-pose")]
+        # self.yolo_models = [YOLO("yolov8n.pt")]
 
         self.selected_color = QColor(0,0,255)
 
@@ -135,7 +143,7 @@ class App(QWidget):
 
         # Full screen button
         self.FullScreenButton = self.ui.FullScreenButton
-        self.FullScreenButton.clicked.connect(self.fullScreen)
+        self.FullScreenButton.clicked.connect(lambda : self.fullScreen(self.label))
 
         # These buttons are just taken in here, no functionality is added
         self.ShortMinTextField = self.ui.ShortMinTextField
@@ -286,9 +294,12 @@ class App(QWidget):
             self.PanSensivity = float(self.PanSensivityEdit.text())
             self.LED_ON = self.LED_checkbox.isChecked()
 
-            self.cap.release()    #camera need to be released in order to update the camera ID (if changed)
-            self.CameraID = int(self.CameraIDEdit.text())
-            self.cap = cv2.VideoCapture(self.CameraID)
+            new_camera_id = int(self.CameraIDEdit.text())
+            # ONLY IF CAMERA ID CHANGED, then do the following, else no need because loading logitech camera is slow
+            if self.CameraID != new_camera_id:
+                self.cap.release()    #camera need to be released in order to update the camera ID (if changed)
+                self.CameraID = new_camera_id
+                self.cap = cv2.VideoCapture(self.CameraID)
 
             if(self.InvertPan):
                 self.max_pan = int(self.MinPanlineEdit.text())
@@ -326,7 +337,6 @@ class App(QWidget):
             # value to set  = self.Servo5Min
             # value to set  = self.Servo5Max
 
-
             self.save_init_file()
             print("values updated")
         except Exception as e:
@@ -334,7 +344,6 @@ class App(QWidget):
             print("can't update values")
 
     def mouseMoveEvent(self, event):
-
         #the position of the mouse is tracked avec the window and converted to a pan and tilt amount
         #for example if mouse completely to the left-> pan_target = 0(or whatever minimum pan_target value is)
         # if completely to the right-> pan_target = 180(or whatever maximum pan_target value is)
@@ -386,7 +395,6 @@ class App(QWidget):
             self.rec = True
             self.PauseButton.setText("Pause")
             self.record()
-
 
     def record(self):  #video recording
 
@@ -451,12 +459,11 @@ class App(QWidget):
             #the arduino will look for the start character "<"
             #then save everything following until it finds the end character ">"
             #at that point the arduino will have saved a message looking like this "154, 23, 0"
-            #it will then split the message at every coma and use the pieces of data to move the servos acordingly
+            #it will then split the message at every coma and use the pieces of data to move the servos accordingly
 
             #And yes I should have used bytes or something a bit better
             #I wrote this a while back and at that time I had even more to learn than I do now!
             #I still lazy and can't be asked to change it now as it works .
-
 
     def roam(self):
         # This makes the robot go jittery in that case, these pan and tilt need to be adjusted 
@@ -481,7 +488,6 @@ class App(QWidget):
                 self.target_tilt += 1
             else:
                 self.roam_pause_count -= 1
-
 
     def image_process(self, img):  #handle the image processing
         #to add later : introduce frame scipping (check only 1 every nframe)
@@ -511,7 +517,6 @@ class App(QWidget):
                 self.roam()              #then roam
             img = opr.visualize_objects(original_image, img, self.yolo_models, self.threshold_dict)
             return img
-
 
     def calculate_camera_move(self, distance_X, distance_Y):
 

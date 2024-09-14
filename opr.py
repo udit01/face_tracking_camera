@@ -9,7 +9,7 @@ import common
 
 
 SHOW_FACES = True
-SHOW_OBJECTS = True
+SHOW_OBJECTS = False
 
 # The higest confidence object will be plotted with the first color and so on...
 # Can pick new colors here. Can also rank the ellipses with area and then plot them in descending order of area
@@ -110,26 +110,29 @@ def visualize_objects(original_image, processed_image, yolo_models, threshold_di
     # threshold_dict['line-color-mid-high'] = 0.45 
 
     # The Code just modifies the image_to_check and no other change in results. 
+    yolo_res_list = []
+    for mod in yolo_models:
+        yolo_res_list.append(mod(original_image, verbose=False))
+        
+    for results_yolo in yolo_res_list:
+        # As we're giving in 1 frame, there should be only 1 results object
+        for i, res in enumerate(results_yolo):
+            # print("------------yolo res--------")
+            processed_image = res.plot(img=processed_image)
+
     if SHOW_OBJECTS:
         # Detect objects, segmentation and pose from Yolo
         yolo_res_list = []
         for mod in yolo_models:
             yolo_res_list.append(mod(original_image, verbose=False))
+        
         # Stop plotting mass results
-        # all_midpoints = []
         # # When it's 1 Yolo model, the obj detector, loop will run once. 
-        # for results_yolo in yolo_res_list:
-        #     # As we're giving in 1 frame, there should be only 1 results object
-        #     for i, res in enumerate(results_yolo):
-        #         # print("------------yolo res--------")
-        #         image_to_check = res.plot(img=image_to_check)
-        #         bboxes = res.boxes
-        #         # Now use the custom plotting function to plot the ellipses instead of rectangles, and fix io later
-        #         mid_pts = plot_ellipse_from_bboxes(image_to_check, bboxes)
-        #         # The return value will a list of mid points
-        #         all_midpoints.append(mid_pts)
-        #     # print("FOUND FACE \n ... ")
+
+                # Now use the custom plotting function to plot the ellipses instead of rectangles, and fix io later
         # # all_midpoints_array = np.vstack(all_midpoints)
+        
+        
         # DRAWING YOLO STUFF
         # Simplyfing logic for 1 obj detector model : 
 
@@ -154,6 +157,7 @@ def visualize_objects(original_image, processed_image, yolo_models, threshold_di
             # Only enumerate on TOP MAX OBJECTS Then further constrain by confidence threshold
             boxes_obj = res.boxes
             for i, xywh in enumerate(boxes_obj.xywh[:threshold_dict['max-objects']]):
+                # TODO: WRITE the area based sorting color coding algorithm. 
                 if(boxes_obj.conf[i]>=threshold_dict['confidence-threshold']):
                     mid_pts = plot_ellipse_from_bbox(processed_image, xywh, col=get_color(i), thickness=threshold_dict['ellipse-line-thickness'])
                     all_midpoints.append(mid_pts)
