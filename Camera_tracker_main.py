@@ -381,6 +381,7 @@ class App(QWidget):
             pickle.dump(init_settings2, init_file2)
 
     def connect(self):    #set COM port from text box if arduino not already connected
+        # This functions hangs somehow.... Different from camera change freeze. 
         if(not self.is_connected):
             port = self.COMlineEdit.text()
             if (self.ard.connect(port)):    #set port label message

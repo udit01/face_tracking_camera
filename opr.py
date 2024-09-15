@@ -187,9 +187,9 @@ def visualize_objects(original_image, processed_image, yolo_models, threshold_di
                 track_ids = res.boxes.id.int().cpu().tolist()
             else:
                 # Just color them according to their iter numbers
-                track_ids = range(11, 11+threshold_dict['max-objects'])
-            print("----------------printing tracking ids: ")
-            print(track_ids)
+                track_ids = range(111, 111+threshold_dict['max-objects'])
+            # print("----------------printing tracking ids: ")
+            # print(track_ids)
             for i, xywh in enumerate(boxes_obj.xywh[:threshold_dict['max-objects']]):
                 # TODO: WRITE the area based sorting color coding algorithm. 
                 if(boxes_obj.conf[i]>=threshold_dict['confidence-threshold']):
