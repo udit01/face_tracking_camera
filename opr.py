@@ -6,11 +6,11 @@ from scipy.spatial import KDTree
 from model.DBFace import DBFace
 from dbface_main import detect
 import common
-
+from collections import defaultdict
 
 SHOW_FACES = True
-SHOW_OBJECTS = False
-
+SHOW_OBJECTS = True
+SHOW_CENTER_CONFIDENCE = True 
 # The higest confidence object will be plotted with the first color and so on...
 # Can pick new colors here. Can also rank the ellipses with area and then plot them in descending order of area
 # OR CAN ALSO track the object by IDS and then use that 
@@ -44,7 +44,7 @@ def remap(value_to_map, new_range_min, new_range_max, old_range_min, old_range_m
 
     return remapped_val
 
-def plot_ellipse_from_bbox(frame, xywh, col=(255, 0, 0), thickness=4  ):
+def plot_ellipse_from_bbox(frame, xywh, col=(255, 0, 0), thickness=4 , corner_pts_radius=10, center_circle_radius = 40, center_circle_thickness=4, confidence_value=0.5 ):
     # plot an ellipse/cicle from the bbox coords
     # Args: 
     # frame, (center-xy) , (maj,min)-ax-len, rotAngle in anticlockwise dir, startAngleArc, endAngleArc, .. 
@@ -54,6 +54,25 @@ def plot_ellipse_from_bbox(frame, xywh, col=(255, 0, 0), thickness=4  ):
     cx, cy, w, h = xywh.cpu().detach().numpy()
     rect = ((cx, cy), (w, h), 0)
     # col = (255, 0, 0) # Blue color because BGR
+    if SHOW_CENTER_CONFIDENCE:
+        px, py = np.int0((cx, cy))
+        cv2.circle(frame, (px, py), radius=center_circle_radius, color=col, thickness = center_circle_thickness)
+        text = f'{(confidence_value):.2f}'
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 1
+        color = col  # White color in BGR
+        text_thickness = 2
+
+        # Get the text size (width, height) and baseline
+        (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, text_thickness)
+
+        text_x = px - (text_width // 2)
+        text_y = py + (text_height // 2)
+
+        cv2.putText(frame, text, (text_x, text_y), font, font_scale, color, text_thickness, cv2.LINE_AA)
+
+        # cv2.putText(frame, text=txt_, org=(px, py), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=col, thickness=1) 
+    
     cv2.ellipse(frame, rect, col, thickness=thickness )
     # Now draw the 4 end points... 
     rect_points = cv2.boxPoints(rect)
@@ -73,7 +92,7 @@ def plot_ellipse_from_bbox(frame, xywh, col=(255, 0, 0), thickness=4  ):
         # Draw the midpoint as a small circle
         # Color same as that orignal ellipse color?
         # What will be the color of the points?
-        cv2.circle(frame, mid_pt, radius=10, color=col, thickness=-1)  # Green midpoint
+        cv2.circle(frame, mid_pt, radius=corner_pts_radius, color=col, thickness=-1)  # Green midpoint
 
     return np.array(mid_pts)
 
@@ -110,22 +129,26 @@ def visualize_objects(original_image, processed_image, yolo_models, threshold_di
     # threshold_dict['line-color-mid-high'] = 0.45 
 
     # The Code just modifies the image_to_check and no other change in results. 
-    yolo_res_list = []
-    for mod in yolo_models:
-        yolo_res_list.append(mod(original_image, verbose=False))
+    # yolo_res_list = []
+    # for mod in yolo_models:
+    #     yolo_res_list.append(mod(original_image, verbose=False))
         
-    for results_yolo in yolo_res_list:
-        # As we're giving in 1 frame, there should be only 1 results object
-        for i, res in enumerate(results_yolo):
-            # print("------------yolo res--------")
-            processed_image = res.plot(img=processed_image)
+    # for results_yolo in yolo_res_list:
+    #     # As we're giving in 1 frame, there should be only 1 results object
+    #     for i, res in enumerate(results_yolo):
+    #         # print("------------yolo res--------")
+    #         processed_image = res.plot(img=processed_image)
 
     if SHOW_OBJECTS:
         # Detect objects, segmentation and pose from Yolo
-        yolo_res_list = []
-        for mod in yolo_models:
-            yolo_res_list.append(mod(original_image, verbose=False))
         
+        yolo_res_list = []
+        # for mod in yolo_models:
+        #     yolo_res_list.append(mod(original_image, verbose=False))
+        track_history = defaultdict(lambda: [])
+        # CHECKING TRACKING STRICTLY
+        yolo_res_list.append(yolo_models[0].track(original_image, verbose=False, show=False))
+
         # Stop plotting mass results
         # # When it's 1 Yolo model, the obj detector, loop will run once. 
 
@@ -156,10 +179,36 @@ def visualize_objects(original_image, processed_image, yolo_models, threshold_di
         for res in results_yolo:
             # Only enumerate on TOP MAX OBJECTS Then further constrain by confidence threshold
             boxes_obj = res.boxes
+            # Because if it's  None, it breaks the next logic. 
+            if(boxes_obj is None):
+                return processed_image
+            # maybe the tracking ids are nulls, and it can't success fully track
+            if res.boxes.id is not None: 
+                track_ids = res.boxes.id.int().cpu().tolist()
+            else:
+                # Just color them according to their iter numbers
+                track_ids = range(11, 11+threshold_dict['max-objects'])
+            print("----------------printing tracking ids: ")
+            print(track_ids)
             for i, xywh in enumerate(boxes_obj.xywh[:threshold_dict['max-objects']]):
                 # TODO: WRITE the area based sorting color coding algorithm. 
                 if(boxes_obj.conf[i]>=threshold_dict['confidence-threshold']):
-                    mid_pts = plot_ellipse_from_bbox(processed_image, xywh, col=get_color(i), thickness=threshold_dict['ellipse-line-thickness'])
+                    
+                    # THis trail logic doesn't work right now anyway...
+                    # track = track_history[track_ids[i]]
+
+                    # track.append((float(xywh[0]), float(xywh[1])))  # x, y center point
+                    # if len(track) > 300:  # retain 90 tracks for 90 frames
+                    #     track.pop(0)
+
+                    # # Draw the tracking lines
+                    # points = np.hstack(track).astype(np.int32).reshape((-1, 1, 2))
+                    # cv2.polylines(processed_image, [points], isClosed=False, color=(230, 230, 230), thickness=10)
+
+
+                    mid_pts = plot_ellipse_from_bbox(processed_image, xywh, col=get_color(track_ids[i]), thickness=threshold_dict['ellipse-line-thickness'], 
+                                                     corner_pts_radius=10, center_circle_radius=40, center_circle_thickness=4,
+                                                     confidence_value=boxes_obj.conf[i])
                     all_midpoints.append(mid_pts)
 
         # # Use KDTree for fast nearest neighbor search

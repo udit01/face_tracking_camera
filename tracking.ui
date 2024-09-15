@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>980</width>
-    <height>978</height>
+    <width>1358</width>
+    <height>1296</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -22,10 +22,10 @@
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>10</y>
-     <width>960</width>
-     <height>540</height>
+     <x>30</x>
+     <y>30</y>
+     <width>1280</width>
+     <height>720</height>
     </rect>
    </property>
    <property name="minimumSize">
@@ -36,8 +36,8 @@
    </property>
    <property name="maximumSize">
     <size>
-     <width>960</width>
-     <height>540</height>
+     <width>1920</width>
+     <height>1080</height>
     </size>
    </property>
    <property name="mouseTracking">
@@ -56,8 +56,8 @@
   <widget class="QCheckBox" name="Manual_checkbox">
    <property name="geometry">
     <rect>
-     <x>820</x>
-     <y>560</y>
+     <x>940</x>
+     <y>860</y>
      <width>104</width>
      <height>20</height>
     </rect>
@@ -69,8 +69,8 @@
   <widget class="QWidget" name="horizontalLayoutWidget">
    <property name="geometry">
     <rect>
-     <x>740</x>
-     <y>510</y>
+     <x>860</x>
+     <y>810</y>
      <width>221</width>
      <height>31</height>
     </rect>
@@ -119,8 +119,8 @@
   <widget class="QPushButton" name="ConnectButton">
    <property name="geometry">
     <rect>
-     <x>580</x>
-     <y>560</y>
+     <x>700</x>
+     <y>860</y>
      <width>181</width>
      <height>31</height>
     </rect>
@@ -132,8 +132,8 @@
   <widget class="QLabel" name="COMConnectLabel">
    <property name="geometry">
     <rect>
-     <x>280</x>
-     <y>560</y>
+     <x>400</x>
+     <y>860</y>
      <width>247</width>
      <height>16</height>
     </rect>
@@ -145,8 +145,8 @@
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>880</y>
+     <x>150</x>
+     <y>1180</y>
      <width>431</width>
      <height>91</height>
     </rect>
@@ -250,11 +250,11 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>480</x>
-     <y>740</y>
+     <x>600</x>
+     <y>1040</y>
      <width>471</width>
      <height>121</height>
     </rect>
@@ -462,11 +462,11 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>740</y>
+     <x>150</x>
+     <y>1040</y>
      <width>441</width>
      <height>121</height>
     </rect>
@@ -600,11 +600,11 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>690</x>
-     <y>600</y>
+     <x>810</x>
+     <y>900</y>
      <width>261</width>
      <height>111</height>
     </rect>
@@ -640,11 +640,11 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>610</y>
+     <x>150</x>
+     <y>910</y>
      <width>431</width>
      <height>91</height>
     </rect>
@@ -799,12 +799,12 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>480</x>
-     <y>610</y>
-     <width>181</width>
+     <x>600</x>
+     <y>910</y>
+     <width>201</width>
      <height>91</height>
     </rect>
    </property>
@@ -865,8 +865,8 @@
   <widget class="QLineEdit" name="COMlineEdit">
    <property name="geometry">
     <rect>
-     <x>92</x>
-     <y>563</y>
+     <x>212</x>
+     <y>863</y>
      <width>110</width>
      <height>21</height>
     </rect>
@@ -884,8 +884,8 @@
   <widget class="QLabel" name="label_4">
    <property name="geometry">
     <rect>
-     <x>33</x>
-     <y>563</y>
+     <x>153</x>
+     <y>863</y>
      <width>53</width>
      <height>16</height>
     </rect>

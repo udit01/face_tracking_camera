@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QColorDialog
 from PyQt5.QtGui import QIcon, QPixmap, QImage, QColor
 from PyQt5.uic import loadUi
+from PyQt5.QtCore import QThread, pyqtSignal, pyqtSlot
 import opr
 import comm_ard
 import random
@@ -17,6 +18,32 @@ print(f"HAS_CUDA = {HAS_CUDA}")
 
 # TODO : Encapsulate all things inside try catch, to deal with exceptions. 
 # TODO : Run from a main/bash thread , which will detect if the program has ended and re-open that, and keep doing that in a for loop
+
+# QHD is 960*540, then HD is this:
+WIDTH = 1280
+HEIGHT = 720
+# Worker class that will run the image_process function in the background
+# Worker class that will run the image_process function in the background
+class Worker(QThread):
+    # Signal to send the result back to the main thread
+    result = pyqtSignal(object)
+    finished = pyqtSignal()
+
+    def __init__(self, main_window, image_path):
+        super().__init__()
+        self.main_window = main_window
+        self.image_path = image_path
+
+    def run(self):
+        # Call the image_process function from MainWindow class with the argument
+        result = self.main_window.image_process(self.image_path)
+        self.result.emit(result)
+        self.finished.emit()
+
+    def stop(self):
+        # Stop the thread gracefully
+        self.quit()
+        self.wait()
 
 class App(QWidget):
 
@@ -34,8 +61,10 @@ class App(QWidget):
 
         self.rec = True                #allows to start camera recording
         self.cap = cv2.VideoCapture(self.CameraID)  #define open CV camera recording
-        self.cap.set(3, 960)                        #set capture width
-        self.cap.set(4, 540)                        #set capture height
+        # self.cap.set(3, 960)                        #set capture width
+        self.cap.set(3, WIDTH)                        #set capture width
+        # self.cap.set(4, 540)                        #set capture height
+        self.cap.set(4, HEIGHT)                        #set capture height
         #The bigger the image is, the longer the processing is going to take to process it
         ## My computer is a bit shit so I kept it quite small .
 
@@ -96,8 +125,9 @@ class App(QWidget):
         # self.yolo_models = [YOLO("yolov8n.pt"), YOLO("yolov8n-seg"), YOLO("yolov8n-pose")]
         # self.yolo_models = [YOLO("yolov8n-seg"), YOLO("yolov8n-pose")]
         # self.yolo_models = [YOLO("yolov8x-seg")]
-        self.yolo_models = [YOLO("yolov8n-pose")]
-        # self.yolo_models = [YOLO("yolov8n.pt")]
+        # self.yolo_models = [YOLO("yolov8n-pose")]
+        # Object detection small model : 
+        self.yolo_models = [YOLO("yolov8n.pt")]
 
         self.selected_color = QColor(0,0,255)
 
@@ -151,9 +181,9 @@ class App(QWidget):
         self.MidMaxTextField = self.ui.MidMaxTextField
         self.LongMaxTextField = self.ui.LongMaxTextField
 
-        self.short_rgb_color = QColor(200,0,0)
-        self.mid_rgb_color = QColor(0,200,0)
-        self.long_rgb_color = QColor(0,0,200)
+        self.short_rgb_color = (200,0,0)
+        self.mid_rgb_color = (0,200,0)
+        self.long_rgb_color = (0,0,200)
 
         self.shortRGBbutton = self.ui.ShortRGBButton
         self.midRGBbutton = self.ui.MidRGBButton
@@ -192,12 +222,17 @@ class App(QWidget):
     
     def fullScreen(self, targetWidget):
         # def switch_fullscreen(targetWidget):
-        if targetWidget.isFullScreen():
+        
+        if self.isFullScreen():
+            self.showNormal()
             targetWidget.showNormal()
             print("Showing normal.")
         else:
-            targetWidget.showFullScreen()
+            # targetWidget.showFullScreen()
+            self.showFullScreen()
+            targetWidget.showMaximized()
             print("Showing full-screen.")
+        
 
 
     # TO get the color input from the USER
@@ -224,13 +259,13 @@ class App(QWidget):
         # set `selected_color`as an instance variable so you can retrieve it later
         # self.selected_color = selected_color
         if len_code == 0 :
-            self.short_rgb_color = selected_color
+            self.short_rgb_color = bgr
             self.threshold_dict['short-rgb'] = bgr
         elif len_code == 1 :
-            self.mid_rgb_color = selected_color
+            self.mid_rgb_color = bgr
             self.threshold_dict['mid-rgb'] = bgr
         elif len_code == 2 :
-            self.long_rgb_color = selected_color
+            self.long_rgb_color = bgr
             self.threshold_dict['long-rgb'] = bgr
         return 
 
@@ -259,7 +294,44 @@ class App(QWidget):
                 #self.CameraIDEdit.setText(str(var[9]))
                 self.LED_checkbox.setChecked(var[10])
             print(var)
+
+
+            with open('init2.pkl', 'rb') as init_file2:
+                
+                init_settings2 = pickle.load(init_file2)
+
+                self.ShortMinTextField.setText(str(init_settings2[0]))
+                self.MidMinTextField.setText(str(init_settings2[1]))
+                self.MidMaxTextField.setText(str(init_settings2[2]))
+                self.LongMaxTextField.setText(str(init_settings2[3]))
+
+                self.short_rgb_color = (init_settings2[4])
+                self.mid_rgb_color = (init_settings2[5])
+                self.long_rgb_color = (init_settings2[6])
+
+                self.Servo1Min.setText(str(init_settings2[7]))
+                self.Servo1Max.setText(str(init_settings2[8]))
+
+                self.Servo2Min.setText(str(init_settings2[9]))
+                self.Servo2Max.setText(str(init_settings2[10]))
+                
+                self.Servo3Min.setText(str(init_settings2[11]))
+                self.Servo3Max.setText(str(init_settings2[12]))
+
+                self.Servo4Min.setText(str(init_settings2[13]))
+                self.Servo4Max.setText(str(init_settings2[14]))
+                
+                self.Servo5Min.setText(str(init_settings2[15]))
+                self.Servo5Max.setText(str(init_settings2[16]))
+
+                self.MaxObjectsTextField.setText(str(init_settings2[17]))
+                self.ConfidenceThresholdTextField.setText(str(init_settings2[18]))
+                self.EllipseThicknessTextField.setText(str(init_settings2[19]))
+                self.LineThicknessTextField.setText(str(init_settings2[20]))
+                
+            print(init_settings2)
             #set variables
+
         except:
             pass
 
@@ -268,8 +340,45 @@ class App(QWidget):
         self.min_tilt, self.max_tilt, self.TiltSensivity, self.InvertTilt,
         self.min_pan, self.max_pan, self.PanSensivity, self.InvertPan,
         self.CameraID, self.LED_ON]
+        
+        
+        init_settings2 = [
+
+        self.ShortMinTextField.text(),
+        self.MidMinTextField.text(),
+        self.MidMaxTextField.text(),
+        self.LongMaxTextField.text(),
+
+        self.short_rgb_color,
+        self.mid_rgb_color,
+        self.long_rgb_color,
+
+        self.Servo1Min.text(),
+        self.Servo1Max.text(),
+
+        self.Servo2Min.text(),
+        self.Servo2Max.text(),
+        
+        self.Servo3Min.text(),
+        self.Servo3Max.text(),
+
+        self.Servo4Min.text(),
+        self.Servo4Max.text(),
+        
+        self.Servo5Min.text(),
+        self.Servo5Max.text(),
+
+        self.MaxObjectsTextField .text(),
+        self.ConfidenceThresholdTextField .text(),
+        self.EllipseThicknessTextField .text(),
+        self.LineThicknessTextField .text(),
+        
+        ]
+
         with open('init.pkl', 'wb') as init_file:
             pickle.dump(init_settings, init_file)
+        with open('init2.pkl', 'wb') as init_file2:
+            pickle.dump(init_settings2, init_file2)
 
     def connect(self):    #set COM port from text box if arduino not already connected
         if(not self.is_connected):
@@ -372,6 +481,8 @@ class App(QWidget):
     def quit(self):
         print('Quit')
         self.rec = False
+        if hasattr(self, 'worker'):
+            self.worker.stop()
         sys.exit()
 
     def closeEvent(self, event):
@@ -406,9 +517,14 @@ class App(QWidget):
                     processed_img = img       #don't process image
                 else:
                     processed_img = self.image_process(img) #process image (check for faces and draw circle and cross)
+                    # pass
             else:                             #if arduino  not connected
                 # processed_img = img           #don't process image
                 # process image even if not connected to aurdino
+                # self.worker = Worker(self, img)
+                # self.worker.result.connect(self.update_GUI)  # Handle result from the worker thread
+                # self.worker.finished.connect(self.task_finished)  # Handle task completion
+                # self.worker.start()
                 processed_img = self.image_process(img) #process image (check for faces and draw circle and cross)
 
 
@@ -423,7 +539,8 @@ class App(QWidget):
     def update_GUI(self, openCV_img): # Convert openCV image and update pyQt label
 
         try: #if this doesn't work check camera ID
-            openCV_img = cv2.resize(openCV_img, (960, 540))  #this is stretching the image a bit but if not done it won't fit the UI
+            # openCV_img = cv2.resize(openCV_img, (960, 540))  #this is stretching the image a bit but if not done it won't fit the UI
+            openCV_img = cv2.resize(openCV_img, (WIDTH, HEIGHT))  #this is stretching the image a bit but if not done it won't fit the UI
             height, width, channel = openCV_img.shape
             bytesPerLine = 3 * width
             qImg = QImage(openCV_img.data, width, height, bytesPerLine, QImage.Format_RGB888).rgbSwapped()
@@ -435,7 +552,8 @@ class App(QWidget):
             self.label.setText("check camera ID")
 
         self.show()
-
+    def task_finished(self):
+        pass
     def move_servos(self):
         if (self.is_connected):
 
