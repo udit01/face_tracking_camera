@@ -24,35 +24,14 @@ void loop() {
   for (pos = 0; pos <= 90; pos += 1) {
     // in steps of 1 degree
     servo_1.write(pos);
-    delay(15);
+    delay(100);
   }
   for (pos = 90; pos >= 0; pos -= 1) {
     servo_1.write(pos);
-    delay(15);
+    delay(100);
   }
 
-  for (pos = 0; pos <= 180; pos += 1) {
-    // in steps of 1 degree
-    servo_2.write(pos);
-    delay(15);
-  }
-  for (pos = 180; pos >= 0; pos -= 1) {
-    servo_2.write(pos);
-    delay(15);
-  }
 
-  //Horizontal_below
-  for (pos = 0; pos <= 170; pos += 1) {
-    // in steps of 1 degree
-    servo_3.write(pos);
-    servo_4.write(pos);
-    delay(15);
-  }
-  for (pos = 170; pos >= 0; pos -= 1) {
-    servo_3.write(pos);
-    servo_4.write(pos);
-    delay(15);
-  }
 
 
 }
