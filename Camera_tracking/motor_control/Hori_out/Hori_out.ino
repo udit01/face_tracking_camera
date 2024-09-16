@@ -6,6 +6,7 @@ Servo servo_2;
 Servo servo_3;
 Servo servo_4;
 Servo servo_5;
+Servo servo_6;
 
 
 int pos = 0;
