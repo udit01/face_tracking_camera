@@ -33,8 +33,8 @@ void fixUpperServos(){
     for (pos = 90; pos <=  180; pos += 1) {
       printf("upper 4: %d", pos);
     upper4.write(pos);
-  delay(100);
-  }
+   delay(100);
+    }
 //  for (pos = 90; pos <=  180; pos += 1) {
 //    printf("upper 5: %d", pos);
 //    upper5.write(pos);
