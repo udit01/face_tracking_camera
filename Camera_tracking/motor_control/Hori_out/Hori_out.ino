@@ -23,11 +23,11 @@ void loop() {
 // Vertical
   for (pos = 0; pos <= 90; pos += 1) {
     // in steps of 1 degree
-    servo_1.write(pos);
+    servo_3.write(pos);
     delay(100);
   }
   for (pos = 90; pos >= 0; pos -= 1) {
-    servo_1.write(pos);
+    servo_3.write(pos);
     delay(100);
   }
 
