@@ -11,7 +11,8 @@ class ard_connect():
 
     def connect(self, port):
         try:
-            self.ser = serial.Serial(port, 115200)
+            # self.ser = serial.Serial(port, 115200)
+            self.ser = serial.Serial(port, 9600)
             self.waitForArduino()
             self.parent.is_connected = True
             return True
