@@ -23,7 +23,7 @@ class ard_connect():
 
         msg = ""
         while msg.find("Hasta la vista baby") == -1:  #string.find() return -1 if value not found
-
+            print("Waiting for aurdino~")
             while self.ser.inWaiting() == 0:  #inWaiting() return number of bytes in buffer, equivalent of Serial.available in arduino
                 pass
 

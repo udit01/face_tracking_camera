@@ -1,12 +1,12 @@
 import cv2
 import math
-import common
-import numpy as np
+# import common
+# import numpy as np
 # from scipy.spatial import KDTree
 # from model.DBFace import DBFace
 # from dbface_main import detect
 # import common
-from collections import defaultdict
+# from collections import defaultdict
 
 # SHOW_FACES = True
 # SHOW_OBJECTS = True
@@ -34,15 +34,15 @@ face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 # def get_color(idx):
 #     return COLOR_ARRAY[idx%(len(COLOR_ARRAY))]
 
-# def remap(value_to_map, new_range_min, new_range_max, old_range_min, old_range_max):
+def remap(value_to_map, new_range_min, new_range_max, old_range_min, old_range_max):
 
-#     remapped_val = (value_to_map - old_range_min) * (new_range_max - new_range_min) / (old_range_max - old_range_min) + new_range_min
-#     if(remapped_val>new_range_max):
-#         remapped_val = new_range_max
-#     elif (remapped_val < new_range_min):
-#         remapped_val = new_range_min
+    remapped_val = (value_to_map - old_range_min) * (new_range_max - new_range_min) / (old_range_max - old_range_min) + new_range_min
+    if(remapped_val>new_range_max):
+        remapped_val = new_range_max
+    elif (remapped_val < new_range_min):
+        remapped_val = new_range_min
 
-#     return remapped_val
+    return remapped_val
 
 # def plot_ellipse_from_bbox(frame, xywh, col=(255, 0, 0), thickness=4 , corner_pts_radius=10, center_circle_radius = 40, center_circle_thickness=4, confidence_value=0.5 ):
 #     # plot an ellipse/cicle from the bbox coords
