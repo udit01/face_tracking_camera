@@ -6,11 +6,12 @@
 // lower3 x-
 // upper4 Y-
 // upper5 X / +-
-Servo lower1;
-Servo lower2;
+
+Servo upper1;
+Servo upper2;
 Servo lower3;
-Servo upper4;
-Servo upper5;
+Servo lower4;
+Servo lower5;
 
 int start = 0;
 int pos = 0;
@@ -21,50 +22,20 @@ void setup() {
   //  servo_3.attach(9);
   //  servo_4.attach(10);
   //  servo_5.attach(11);
-  lower1.attach(7);
-  lower2.attach(8);
-  lower3.attach(9);
-  upper4.attach(10);
-  upper5.attach(11);
+  upper1.attach(1);
+  upper2.attach(2);
+  lower3.attach(3);
+  lower4.attach(4);
+  lower5.attach(5);
 }
 
 void loop() {
+          upper1.write(30);
 
-
-  for (pos = 30; pos <= 150; pos += 1) {
-    // in steps of 1 degree
-    lower1.write(pos);
-    lower2.write(pos);
-    lower3.write(pos);
-    delay(20);
-  }
-  for (pos = 150; pos >= 30; pos -= 1) {
-    lower1.write(pos);
-    lower2.write(pos);
-    lower3.write(pos);
-
-    delay(20);
-  }
-  for (pos = 30; pos <= 150; pos += 1) {
-    // in steps of 1 degree
-
-    upper4.write(pos);
-    upper5.write(pos);
-
-    delay(20);
-  }
-  for (pos = 150; pos >= 30; pos -= 1) {
-
-    upper4.write(pos);
-    upper5.write(pos);
-
-    delay(20);
-  }
-
-
-
-
-  delay(15);
-
+    upper2.write(30);
+        lower3.write(30);
+                lower4.write(90);
+                        lower5.write(30);
+    delay(10);
 
 }
