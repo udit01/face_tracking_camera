@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from collections import OrderedDict
 import torch.utils.model_zoo as model_zoo
 import numpy as np
+np.int0 = np.int64
 
 _MODEL_URL_DOMAIN = "http://zifuture.com:1556/fs/public_models"
 _MODEL_URL_LARGE = "mbv3large-76f5a50e.pth"

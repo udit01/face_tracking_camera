@@ -1,6 +1,7 @@
 
 import common
 import numpy as np
+np.int0 = np.int64
 import torch
 import torch.nn.functional as F
 import torch.nn as nn

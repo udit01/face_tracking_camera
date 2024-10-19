@@ -2,6 +2,7 @@ import cv2
 import math
 import common
 import numpy as np
+np.int0 = np.int64
 from scipy.spatial import KDTree
 from model.DBFace import DBFace
 from dbface_main import detect

@@ -2,6 +2,7 @@
 import cv2
 import random
 import numpy as np
+np.int0 = np.int64
 import math
 import os
 
