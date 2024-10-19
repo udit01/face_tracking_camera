@@ -9,12 +9,12 @@ import random
 import pickle
 import copy
 import cv2
-import torch
-from model.DBFace import DBFace
-from ultralytics import YOLO
+# import torch
+# from model.DBFace import DBFace
+# from ultralytics import YOLO
 
-HAS_CUDA = torch.cuda.is_available()
-print(f"HAS_CUDA = {HAS_CUDA}")
+# HAS_CUDA = torch.cuda.is_available()
+# print(f"HAS_CUDA = {HAS_CUDA}")
 
 # TODO : Encapsulate all things inside try catch, to deal with exceptions. 
 # TODO : Run from a main/bash thread , which will detect if the program has ended and re-open that, and keep doing that in a for loop
@@ -115,11 +115,11 @@ class App(QWidget):
 
         self.threshold_dict = threshold_dict
 
-        self.dbface = DBFace()
-        self.dbface.eval()
-        if HAS_CUDA:
-            self.dbface.cuda()
-        self.dbface.load("model/dbface.pth")
+        # self.dbface = DBFace()
+        # self.dbface.eval()
+        # if HAS_CUDA:
+        #     self.dbface.cuda()
+        # self.dbface.load("model/dbface.pth")
 
         # Instead of using 3 models for showcasing, using 1 model for req
         # self.yolo_models = [YOLO("yolov8n.pt"), YOLO("yolov8n-seg"), YOLO("yolov8n-pose")]
@@ -127,12 +127,12 @@ class App(QWidget):
         # self.yolo_models = [YOLO("yolov8x-seg")]
         # self.yolo_models = [YOLO("yolov8n-pose")]
         # Object detection small model : 
-        self.yolo_models = [YOLO("yolov8n.pt")]
+        # self.yolo_models = [YOLO("yolov8n.pt")]
 
         self.selected_color = QColor(0,0,255)
 
         # Initialize the random colors otherwise 
-        opr.make_random_colors_array(num_colors=20)
+        # opr.make_random_colors_array(num_colors=20)
 
         self.ard = comm_ard.ard_connect(self)     #create object allowing communicationn with arduino
         self.initUI()    #set up UI( see below )
@@ -232,8 +232,6 @@ class App(QWidget):
             self.showFullScreen()
             targetWidget.showMaximized()
             print("Showing full-screen.")
-        
-
 
     # TO get the color input from the USER
     def showColorDialog(self, len_code=0):
@@ -611,7 +609,8 @@ class App(QWidget):
     def image_process(self, img):  #handle the image processing
         #to add later : introduce frame scipping (check only 1 every nframe)
         original_image = copy.deepcopy(img)
-        processed_img = opr.find_face(img, self.max_target_distance, self.dbface)  # try to find face and return processed image
+        # processed_img = opr.find_face(img, self.max_target_distance, self.dbface)  # try to find face and return processed image
+        processed_img = opr.find_face(img, self.max_target_distance)  # try to find face and return processed image
         # if face found during processing , the data return will be as following :
         #[True, image_to_check, distance_from_center_X, distance_from_center_Y, locked]
         #if not it will just return False
@@ -623,7 +622,7 @@ class App(QWidget):
             self.target_locked = processed_img[4]
             self.calculate_camera_move(processed_img[2], processed_img[3])  # calculate new targets depending on distance between face and image center
             # Add yolo objects 
-            processed_img[1] = opr.visualize_objects(original_image, processed_img[1], self.yolo_models, self.threshold_dict)
+            # processed_img[1] = opr.visualize_objects(original_image, processed_img[1], self.yolo_models, self.threshold_dict)
             # Return the shiny new image here. 
             return processed_img[1]
         else:
@@ -634,7 +633,7 @@ class App(QWidget):
                 self.empty_frame_number -= 1  #decrease frame count until it equal 0
             else:
                 self.roam()              #then roam
-            img = opr.visualize_objects(original_image, img, self.yolo_models, self.threshold_dict)
+            # img = opr.visualize_objects(original_image, img, self.yolo_models, self.threshold_dict)
             return img
 
     def calculate_camera_move(self, distance_X, distance_Y):
