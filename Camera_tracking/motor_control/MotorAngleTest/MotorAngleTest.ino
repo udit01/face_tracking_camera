@@ -16,12 +16,7 @@ Servo lower5;
 int start = 0;
 int pos = 0;
 
-void setup() {
-  //  servo_1.attach(7);
-  //  servo_2.attach(8);
-  //  servo_3.attach(9);
-  //  servo_4.attach(10);
-  //  servo_5.attach(11);
+void setup(){
   upper1.attach(1);
   upper2.attach(2);
   lower3.attach(3);
@@ -30,12 +25,11 @@ void setup() {
 }
 
 void loop() {
-          upper1.write(30);
-
-    upper2.write(30);
-        lower3.write(30);
-                lower4.write(90);
-                        lower5.write(30);
+    upper1.write(150);
+    upper2.write(90);
+    lower3.write(30);
+    lower4.write(90);
+    lower5.write(30);
     delay(10);
 
 }
