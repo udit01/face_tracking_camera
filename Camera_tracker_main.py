@@ -220,7 +220,19 @@ class App(QWidget):
         self.Servo5Min = self.ui.Servo5Min
         self.Servo5Max = self.ui.Servo5Max
 
+
+
+        self.MaxObjectsTextField = self.ui.MaxObjectsTextField
+        self.ConfidenceThresholdTextField = self.ui.ConfidenceThresholdTextField
+        self.EllipseThicknessTextField = self.ui.EllipseThicknessTextField
+        self.LineThicknessTextField = self.ui.LineThicknessTextField
+
+        # What are the values in here need to be checked and confirmed according to our setup
+        self.load_init_file()
+
+        # AFTER loading from the init file and everywhere : 
         try: 
+            print("In the try block")
             self.Servo1MinValueFloat = float ( self.Servo1Min.text() )
             self.Servo1MaxValueFloat = float ( self.Servo1Max.text() )
             self.Servo2MinValueFloat = float ( self.Servo2Min.text() )
@@ -231,7 +243,8 @@ class App(QWidget):
             self.Servo4MaxValueFloat = float ( self.Servo4Max.text() )
             self.Servo5MinValueFloat = float ( self.Servo5Min.text() )
             self.Servo5MaxValueFloat = float ( self.Servo5Max.text() )
-        except:
+        except Exception as e:
+            print("In the except blog because of exception:", e)
             self.Servo1MinValueFloat = 100
             self.Servo1MaxValueFloat = 150
             self.Servo2MinValueFloat = 30
@@ -243,16 +256,8 @@ class App(QWidget):
             self.Servo5MinValueFloat = 30
             self.Servo5MaxValueFloat = 50
 
-
-
-        self.MaxObjectsTextField = self.ui.MaxObjectsTextField
-        self.ConfidenceThresholdTextField = self.ui.ConfidenceThresholdTextField
-        self.EllipseThicknessTextField = self.ui.EllipseThicknessTextField
-        self.LineThicknessTextField = self.ui.LineThicknessTextField
-
-        # What are the values in here need to be checked and confirmed according to our setup
-        self.load_init_file()
         self.update_angles() #update angle method
+
 
         self.record()  #start recording
     
@@ -546,11 +551,12 @@ class App(QWidget):
         self.target_pan = random.uniform(self.min_pan, self.max_pan)
 
         # FOR NOW just set them all to 90
-        self.servo1_target = 90
-        self.servo2_target = 90
-        self.servo3_target = 90
-        self.servo4_target = 90
-        self.servo5_target = 90
+        # Here it's good to set them to the "GOOD"/"best" looking angle within the targeted range. 
+        self.servo1_target = 110
+        self.servo2_target = 50
+        self.servo3_target = 30
+        self.servo4_target = 40
+        self.servo5_target = 30
 
 
 
@@ -681,13 +687,14 @@ class App(QWidget):
             self.servo2_expected_target = int(random.uniform(self.Servo2MinValueFloat, self.Servo2MaxValueFloat))
             self.servo3_expected_target = int(random.uniform(self.Servo3MinValueFloat, self.Servo3MaxValueFloat))
             self.servo4_expected_target = int(random.uniform(self.Servo4MinValueFloat, self.Servo4MaxValueFloat))
+            # Kind of not true anymore
             self.servo5_expected_target = 180-self.servo3_expected_target
-            print('INSIDE ROAM _____IF ')
-            print(self.servo1_expected_target)
-            print(self.servo2_expected_target)
-            print(self.servo3_expected_target)
-            print(self.servo4_expected_target)
-            print(self.servo5_expected_target)
+            # print('INSIDE ROAM _____IF ')
+            # print(self.servo1_expected_target)
+            # print(self.servo2_expected_target)
+            # print(self.servo3_expected_target)
+            # print(self.servo4_expected_target)
+            # print(self.servo5_expected_target)
 
         else:        #if roam count > 1
                      #increment pan target toward roam target
@@ -704,22 +711,22 @@ class App(QWidget):
             #     self.target_tilt += 1
             # else:
             #     self.roam_pause_count -= 1
-            print("INSIDE ROAM- ELSE----------------expected vals-----")
+            # print("INSIDE ROAM- ELSE----------------expected vals-----")
 
-            print(self.servo1_expected_target)
-            print(self.servo2_expected_target)
-            print(self.servo3_expected_target)
-            print(self.servo4_expected_target)
-            print(self.servo5_expected_target)
-            # print("INSIDE ROAM--------")
-            print('----- current')
+            # print(self.servo1_expected_target)
+            # print(self.servo2_expected_target)
+            # print(self.servo3_expected_target)
+            # print(self.servo4_expected_target)
+            # print(self.servo5_expected_target)
+            # # print("INSIDE ROAM--------")
+            # print('----- current')
 
-            print(self.servo1_target)
-            print(self.servo2_target)
-            print(self.servo3_target)
-            print(self.servo4_target)
-            print(self.servo5_target)
-            print('-----')
+            # print(self.servo1_target)
+            # print(self.servo2_target)
+            # print(self.servo3_target)
+            # print(self.servo4_target)
+            # print(self.servo5_target)
+            # print('-----')
             DELTA = 1
             def find_exp(current_target_angle, expected_target_angle, roam_pause_count_old):
                 current_target_angle = int(current_target_angle)
@@ -743,15 +750,15 @@ class App(QWidget):
             self.servo4_target, self.roam_pause_count, _ = find_exp(self.servo4_target, self.servo4_expected_target, self.roam_pause_count)
             # Just mannual calculation, could be a hard jerk
             self.servo5_target -= s3Change
-            # These 5 will be sent to aurdiono now
-            print("INSIDE ROAM- ELSE after changing---------------------")
-            print(self.servo1_target)
-            print(self.servo2_target)
-            print(self.servo3_target)
-            print(self.servo4_target)
-            print(self.servo5_target)
-            print('-----')
-            print("__"*40)
+            # These 5 will be sent to arduino now
+            # print("INSIDE ROAM- ELSE after changing---------------------")
+            # print(self.servo1_target)
+            # print(self.servo2_target)
+            # print(self.servo3_target)
+            # print(self.servo4_target)
+            # print(self.servo5_target)
+            # print('-----')
+            # print("__"*40)
 
             
 
@@ -789,7 +796,8 @@ class App(QWidget):
             return img
 
     def calculate_camera_move(self, distance_X, distance_Y):
-
+        # RIGHT now as I am making no changes in the servo_i_th motor angles, nothing will move. BUT it will also NOT roam. 
+        # So it will stay in place. 
         #self.target_pan += distance_X * self.PanSensivity
 
         if(self.InvertPan): #handle inverted pan
@@ -822,8 +830,7 @@ class App(QWidget):
             elif (self.target_tilt < self.min_tilt):
                 self.target_tilt = self.min_tilt
 
-        # TO complext to calculate now, 
-        # JUST DON"T MOVE ANYTHING, therefore NO CHANGE
+        # Right now 2-xy axis to 5 motor inverse kinematics is super difficult. 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
