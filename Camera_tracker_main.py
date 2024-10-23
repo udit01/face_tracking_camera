@@ -22,6 +22,13 @@ import cv2
 # QHD is 960*540, then HD is this:
 WIDTH = 960
 HEIGHT = 540
+
+
+SERVO1_GOOD = 145
+SERVO2_GOOD = 110
+SERVO3_GOOD = 30
+SERVO4_GOOD = 145
+SERVO5_GOOD = 30
 # Worker class that will run the image_process function in the background
 # Worker class that will run the image_process function in the background
 class Worker(QThread):
@@ -83,17 +90,17 @@ class App(QWidget):
         self.roam_pause = 40      #amount of frame the camera is going to pause for when roam tilt or pan target reached
         self.roam_pause_count = self.roam_pause   #current pause frame count
 
-        self.servo1_target = 145
-        self.servo2_target = 110
-        self.servo3_target = 30
-        self.servo4_target = 145
-        self.servo5_target = 30
+        self.servo1_target = SERVO1_GOOD
+        self.servo2_target = SERVO2_GOOD
+        self.servo3_target = SERVO3_GOOD
+        self.servo4_target = SERVO4_GOOD
+        self.servo5_target = SERVO5_GOOD
 
-        self.servo1_expected_target = 145
-        self.servo2_expected_target = 110
-        self.servo3_expected_target = 30
-        self.servo4_expected_target = 145
-        self.servo5_expected_target = 30
+        self.servo1_expected_target = SERVO1_GOOD
+        self.servo2_expected_target = SERVO2_GOOD
+        self.servo3_expected_target = SERVO3_GOOD
+        self.servo4_expected_target = SERVO4_GOOD
+        self.servo5_expected_target = SERVO5_GOOD
 
         self.is_connected = False    #boolean defining if arduino is connected
 
@@ -551,12 +558,13 @@ class App(QWidget):
         self.target_pan = random.uniform(self.min_pan, self.max_pan)
 
         # FOR NOW just set them all to 90
-        # Here it's good to set them to the "GOOD"/"best" looking angle within the targeted range. 
-        self.servo1_target = 110
-        self.servo2_target = 50
-        self.servo3_target = 30
-        self.servo4_target = 40
-        self.servo5_target = 30
+        # Here it's good to set them to the "GOOD"/"best" looking angle within the targeted range.
+        # # CHANGED TO THE GOOD POSITIONS HERE 
+        self.servo1_target = SERVO1_GOOD
+        self.servo2_target = SERVO2_GOOD
+        self.servo3_target = SERVO3_GOOD
+        self.servo4_target = SERVO4_GOOD
+        self.servo5_target = SERVO5_GOOD
 
 
 
