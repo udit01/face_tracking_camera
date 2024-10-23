@@ -34,14 +34,25 @@ boolean newDataFromPC = false;
 //float panServoAngle = 90.0;
 //float tiltServoAngle = 90.0;
 
-float servo1_angle = 145.0;
-float servo2_angle = 110.0;
-float servo3_angle = 30.0;
-float servo4_angle = 145.0;
-float servo5_angle = 30.0;
+
+int servo1_good_angle = 145;
+int servo2_good_angle = 110;
+int servo3_good_angle = 30;
+int servo4_good_angle = 145;
+int servo5_good_angle = 30;
+
+
+float servo1_angle = servo1_good_angle;
+float servo2_angle = servo2_good_angle;
+float servo3_angle = servo3_good_angle;
+float servo4_angle = servo4_good_angle;
+float servo5_angle = servo5_good_angle;
+
 
 
 int LED_state = 0;
+
+
 
 //8=============D
 
@@ -203,11 +214,11 @@ void moveServo()
 
   void start_sequence()
   {
-    upper1.write(145);
-    upper2.write(110);
-    lower3.write(30);
-    lower4.write(145);
-    lower5.write(30);
+    upper1.write(servo1_good_angle);
+    upper2.write(servo2_good_angle);
+    lower3.write(servo3_good_angle);
+    lower4.write(servo4_good_angle);
+    lower5.write(servo5_good_angle);
     
     delay(3000);
 
