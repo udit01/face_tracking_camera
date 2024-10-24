@@ -20,8 +20,8 @@ print(f"HAS_CUDA = {HAS_CUDA}")
 # TODO : Run from a main/bash thread , which will detect if the program has ended and re-open that, and keep doing that in a for loop
 
 # QHD is 960*540, then HD is this:
-WIDTH = 1280
-HEIGHT = 720
+WIDTH = 1440
+HEIGHT = 1440
 # Worker class that will run the image_process function in the background
 # Worker class that will run the image_process function in the background
 class Worker(QThread):
@@ -113,6 +113,15 @@ class App(QWidget):
         threshold_dict['ellipse-line-thickness']   = 4
         threshold_dict['connecting-line-thickness'] = 3
 
+
+        threshold_dict['ellipse-corner-points-radius'] = 10
+        threshold_dict['center-circle-radius'] = 40
+        threshold_dict['center-circle-thickness']   = 4
+        threshold_dict['center-circle-text-font-thickness'] = 1
+        
+        threshold_dict['center-circle-text-color'] = (255, 255, 255) 
+        threshold_dict['center-circle-fill-color'] = (30, 30, 30) 
+
         self.threshold_dict = threshold_dict
 
         self.dbface = DBFace()
@@ -127,7 +136,8 @@ class App(QWidget):
         # self.yolo_models = [YOLO("yolov8x-seg")]
         # self.yolo_models = [YOLO("yolov8n-pose")]
         # Object detection small model : 
-        self.yolo_models = [YOLO("yolov8n.pt")]
+        # n s m l x
+        self.yolo_models = [YOLO("yolo11x.pt")]
 
         self.selected_color = QColor(0,0,255)
 
@@ -214,6 +224,20 @@ class App(QWidget):
         self.EllipseThicknessTextField = self.ui.EllipseThicknessTextField
         self.LineThicknessTextField = self.ui.LineThicknessTextField
 
+        self.EllipseCornerPointsRadiusTextField = self.ui.EllipseCornerPointsRadiusTextField
+        self.CenterCircleRadiusTextField = self.ui.CenterCircleRadiusTextField
+        self.CenterCircleThicknessTextField = self.ui.CenterCircleThicknessTextField
+        self.CenterCircleTextFontSizeTextField = self.ui.CenterCircleTextFontSizeTextField
+
+        self.center_circle_text_color = (111,111,111)
+        self.center_circle_fill_color = (0,0,200)
+
+        self.CenterCircleTextColorButton = self.ui.CenterCircleTextColorButton
+        self.CenterCircleFillColorButton = self.ui.CenterCircleFillColorButton
+        
+        self.CenterCircleTextColorButton.clicked.connect( lambda: self.showColorDialog(len_code=11) )
+        self.CenterCircleFillColorButton.clicked.connect( lambda: self.showColorDialog(len_code=12) )
+        
         # What are the values in here need to be checked and confirmed according to our setup
         self.load_init_file()
         self.update_angles() #update angle method
@@ -267,6 +291,14 @@ class App(QWidget):
         elif len_code == 2 :
             self.long_rgb_color = bgr
             self.threshold_dict['long-rgb'] = bgr
+
+        elif len_code == 11:
+            self.center_circle_text_color = bgr
+            self.threshold_dict['center-circle-text-color'] = bgr
+        elif len_code == 12:
+            self.center_circle_fill_color = bgr
+            self.threshold_dict['center-circle-fill-color'] = bgr
+
         return 
 
     def load_init_file(self):
@@ -328,6 +360,14 @@ class App(QWidget):
                 self.ConfidenceThresholdTextField.setText(str(init_settings2[18]))
                 self.EllipseThicknessTextField.setText(str(init_settings2[19]))
                 self.LineThicknessTextField.setText(str(init_settings2[20]))
+
+                self.EllipseCornerPointsRadiusTextField.setText(str(init_settings2[21]))
+                self.CenterCircleRadiusTextField.setText(str(init_settings2[22]))
+                self.CenterCircleThicknessTextField.setText(str(init_settings2[23]))
+                self.CenterCircleTextFontSizeTextField.setText(str(init_settings2[24]))
+
+                self.center_circle_text_color = (init_settings2[25])
+                self.center_circle_fill_color = (init_settings2[26])
                 
             print(init_settings2)
             #set variables
@@ -368,10 +408,18 @@ class App(QWidget):
         self.Servo5Min.text(),
         self.Servo5Max.text(),
 
-        self.MaxObjectsTextField .text(),
-        self.ConfidenceThresholdTextField .text(),
-        self.EllipseThicknessTextField .text(),
-        self.LineThicknessTextField .text(),
+        self.MaxObjectsTextField.text(),
+        self.ConfidenceThresholdTextField.text(),
+        self.EllipseThicknessTextField.text(),
+        self.LineThicknessTextField.text(),
+        
+        self.EllipseCornerPointsRadiusTextField.text(),
+        self.CenterCircleRadiusTextField.text(),
+        self.CenterCircleThicknessTextField.text(),
+        self.CenterCircleTextFontSizeTextField.text(),
+
+        self.center_circle_text_color,
+        self.center_circle_fill_color,
         
         ]
 
@@ -434,6 +482,11 @@ class App(QWidget):
             self.threshold_dict['confidence-threshold']      = get_norm( float( self.ConfidenceThresholdTextField.text() ) )
             self.threshold_dict['ellipse-line-thickness']    =         (   int( self.EllipseThicknessTextField.text() ) )
             self.threshold_dict['connecting-line-thickness'] =         (   int( self.LineThicknessTextField.text() ) )
+
+            self.threshold_dict['ellipse-corner-points-radius'] = ( int( self.EllipseCornerPointsRadiusTextField.text() ) )
+            self.threshold_dict['center-circle-radius']         = ( int( self.CenterCircleRadiusTextField.text() ) )
+            self.threshold_dict['center-circle-thickness']      = ( int( self.CenterCircleThicknessTextField.text() ) )
+            self.threshold_dict['center-circle-text-font-thickness'] = ( int( self.CenterCircleTextFontSizeTextField.text() ) )
 
             # Set these servo values later and save and load them from pickle
             # value to set  = self.Servo1Min

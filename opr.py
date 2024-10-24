@@ -19,6 +19,7 @@ SHOW_CENTER_CONFIDENCE = True
 COLOR_ARRAY = [ (51, 204, 204), (255, 102, 255), (255, 102, 0), (42, 128, 0) ]
 COLOR_COUNTER = 0 
 
+MANUAL_COLOR = False 
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 # INTENDED TO BE CALLED ONCE INSIDE the init function
@@ -27,7 +28,9 @@ def make_random_colors_array(num_colors=20):
     global COLOR_ARRAY
     COLOR_ARRAY = []
     for _ in range(num_colors):
-        color = list(np.random.random(size=3) * 256)
+        c1 = (np.random.random(size=1)[0]) * 256
+        c1 = int(c1)
+        color = (c1, c1, c1)
         COLOR_ARRAY.append(color)
     
     # Return nothing
@@ -44,7 +47,14 @@ def remap(value_to_map, new_range_min, new_range_max, old_range_min, old_range_m
 
     return remapped_val
 
-def plot_ellipse_from_bbox(frame, xywh, col=(255, 0, 0), thickness=4 , corner_pts_radius=10, center_circle_radius = 40, center_circle_thickness=4, confidence_value=0.5 ):
+def plot_ellipse_from_bbox(frame, xywh, col=(150, 150, 150), thickness=4 , 
+                           corner_pts_radius=10, center_circle_radius = 40, 
+                           center_circle_thickness=4, 
+                           center_circle_text_font_size = 1,
+                           center_circle_text_font_thickness =1,
+                           center_circle_text_color = (255, 255, 255),
+                           center_circle_fill_color = (0, 200, 0),
+                           confidence_value=0.5 ):
     # plot an ellipse/cicle from the bbox coords
     # Args: 
     # frame, (center-xy) , (maj,min)-ax-len, rotAngle in anticlockwise dir, startAngleArc, endAngleArc, .. 
@@ -54,14 +64,26 @@ def plot_ellipse_from_bbox(frame, xywh, col=(255, 0, 0), thickness=4 , corner_pt
     cx, cy, w, h = xywh.cpu().detach().numpy()
     rect = ((cx, cy), (w, h), 0)
     # col = (255, 0, 0) # Blue color because BGR
+    ellipse_color = col
+
     if SHOW_CENTER_CONFIDENCE:
         px, py = np.int0((cx, cy))
-        cv2.circle(frame, (px, py), radius=center_circle_radius, color=col, thickness = center_circle_thickness)
-        text = f'{(confidence_value):.2f}'
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 1
-        color = col  # White color in BGR
-        text_thickness = 2
+        # cv2.circle(frame, (px, py), radius=center_circle_radius, color=col, thickness = center_circle_thickness)
+
+        circle_color = center_circle_fill_color if MANUAL_COLOR else col
+        cv2.circle(frame, (px, py), radius=center_circle_radius, color=circle_color, thickness = center_circle_thickness)
+
+        conf_value_ = int(100*confidence_value)
+        text = f'{conf_value_}'
+        
+        # font = cv2.FONT_HERSHEY_SIMPLEX
+        font = cv2.FONT_HERSHEY_SCRIPT_SIMPLEX
+        
+        # THIS IS THE FONT SIZE< THAT IS THE THICKNESSSSS
+        font_scale = center_circle_text_font_size
+        # text_color_ = center_circle_text_color if MANUAL_COLOR else col  # White text_color_ in BGR
+        text_color_ = center_circle_text_color 
+        text_thickness = center_circle_text_font_thickness
 
         # Get the text size (width, height) and baseline
         (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, text_thickness)
@@ -69,11 +91,13 @@ def plot_ellipse_from_bbox(frame, xywh, col=(255, 0, 0), thickness=4 , corner_pt
         text_x = px - (text_width // 2)
         text_y = py + (text_height // 2)
 
-        cv2.putText(frame, text, (text_x, text_y), font, font_scale, color, text_thickness, cv2.LINE_AA)
+        cv2.putText(frame, text, (text_x, text_y), font, font_scale, text_color_, text_thickness, cv2.LINE_AA)
 
         # cv2.putText(frame, text=txt_, org=(px, py), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=col, thickness=1) 
     
-    cv2.ellipse(frame, rect, col, thickness=thickness )
+    
+    # Making the ellipse & 4 end points color same as the circle color
+    cv2.ellipse(frame, rect, ellipse_color, thickness=thickness )
     # Now draw the 4 end points... 
     rect_points = cv2.boxPoints(rect)
     rect_points = np.int0(rect_points)  # Convert to integer coordinates
@@ -92,7 +116,7 @@ def plot_ellipse_from_bbox(frame, xywh, col=(255, 0, 0), thickness=4 , corner_pt
         # Draw the midpoint as a small circle
         # Color same as that orignal ellipse color?
         # What will be the color of the points?
-        cv2.circle(frame, mid_pt, radius=corner_pts_radius, color=col, thickness=-1)  # Green midpoint
+        cv2.circle(frame, mid_pt, radius=corner_pts_radius, color=ellipse_color, thickness=-1)  # Green midpoint
 
     return np.array(mid_pts)
 
@@ -206,8 +230,15 @@ def visualize_objects(original_image, processed_image, yolo_models, threshold_di
                     # cv2.polylines(processed_image, [points], isClosed=False, color=(230, 230, 230), thickness=10)
 
 
-                    mid_pts = plot_ellipse_from_bbox(processed_image, xywh, col=get_color(track_ids[i]), thickness=threshold_dict['ellipse-line-thickness'], 
-                                                     corner_pts_radius=10, center_circle_radius=40, center_circle_thickness=4,
+                    mid_pts = plot_ellipse_from_bbox(processed_image, xywh, col = get_color(track_ids[i]),
+                                                     thickness = threshold_dict['ellipse-line-thickness'], 
+                                                     corner_pts_radius = threshold_dict['ellipse-corner-points-radius'],
+                                                     center_circle_radius =   threshold_dict['center-circle-radius'],
+                                                     center_circle_thickness =   threshold_dict['center-circle-thickness'],
+                                                     center_circle_text_font_size = 0.5,
+                                                     center_circle_text_font_thickness =  threshold_dict['center-circle-text-font-thickness'] ,
+                                                     center_circle_text_color =  threshold_dict['center-circle-text-color'] ,
+                                                     center_circle_fill_color =  threshold_dict['center-circle-fill-color'] ,
                                                      confidence_value=boxes_obj.conf[i])
                     all_midpoints.append(mid_pts)
 
@@ -311,16 +342,16 @@ def find_face(image_to_check, max_target_distance, model):
             color = (0, 0, 255)
 
 
-        cv2.rectangle(image_to_check,(center_face_X-10, center_face_Y), (center_face_X+10, center_face_Y),    #draw first line of the cross
-                      color, 2)
-        cv2.rectangle(image_to_check,(center_face_X, center_face_Y-10), (center_face_X, center_face_Y+10),    #draw second line of the cross
-                      color,2)
+        # cv2.rectangle(image_to_check,(center_face_X-10, center_face_Y), (center_face_X+10, center_face_Y),    #draw first line of the cross
+        #               color, 2)
+        # cv2.rectangle(image_to_check,(center_face_X, center_face_Y-10), (center_face_X, center_face_Y+10),    #draw second line of the cross
+        #               color,2)
 
-        cv2.circle(image_to_check, (int(width/2), int(height/2)), int(max_target_distance) , color, 2)    #draw circle
+        # cv2.circle(image_to_check, (int(width/2), int(height/2)), int(max_target_distance) , color, 2)    #draw circle
 
         # This is to draw the Face landmarks from DBface
         for obj in objs:
-            common.drawbbox(image_to_check, obj)
+            common.drawbbox(image_to_check, obj, landmarkcolor=(255,255,255))
         # IF FACE is found, modify the result: 
         RESULT_TO_RETURN =  [True, image_to_check, distance_from_center_X, distance_from_center_Y, locked]
 
