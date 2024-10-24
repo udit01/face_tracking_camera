@@ -9,19 +9,26 @@ import random
 import pickle
 import copy
 import cv2
-import torch
-from model.DBFace import DBFace
-from ultralytics import YOLO
+# import torch
+# from model.DBFace import DBFace
+# from ultralytics import YOLO
 
-HAS_CUDA = torch.cuda.is_available()
-print(f"HAS_CUDA = {HAS_CUDA}")
+# HAS_CUDA = torch.cuda.is_available()
+# print(f"HAS_CUDA = {HAS_CUDA}")
 
 # TODO : Encapsulate all things inside try catch, to deal with exceptions. 
 # TODO : Run from a main/bash thread , which will detect if the program has ended and re-open that, and keep doing that in a for loop
 
 # QHD is 960*540, then HD is this:
-WIDTH = 1280
-HEIGHT = 720
+WIDTH = 960
+HEIGHT = 540
+
+
+SERVO1_GOOD = 145
+SERVO2_GOOD = 110
+SERVO3_GOOD = 30
+SERVO4_GOOD = 145
+SERVO5_GOOD = 30
 # Worker class that will run the image_process function in the background
 # Worker class that will run the image_process function in the background
 class Worker(QThread):
@@ -83,6 +90,17 @@ class App(QWidget):
         self.roam_pause = 40      #amount of frame the camera is going to pause for when roam tilt or pan target reached
         self.roam_pause_count = self.roam_pause   #current pause frame count
 
+        self.servo1_target = SERVO1_GOOD
+        self.servo2_target = SERVO2_GOOD
+        self.servo3_target = SERVO3_GOOD
+        self.servo4_target = SERVO4_GOOD
+        self.servo5_target = SERVO5_GOOD
+
+        self.servo1_expected_target = SERVO1_GOOD
+        self.servo2_expected_target = SERVO2_GOOD
+        self.servo3_expected_target = SERVO3_GOOD
+        self.servo4_expected_target = SERVO4_GOOD
+        self.servo5_expected_target = SERVO5_GOOD
 
         self.is_connected = False    #boolean defining if arduino is connected
 
@@ -115,11 +133,11 @@ class App(QWidget):
 
         self.threshold_dict = threshold_dict
 
-        self.dbface = DBFace()
-        self.dbface.eval()
-        if HAS_CUDA:
-            self.dbface.cuda()
-        self.dbface.load("model/dbface.pth")
+        # self.dbface = DBFace()
+        # self.dbface.eval()
+        # if HAS_CUDA:
+        #     self.dbface.cuda()
+        # self.dbface.load("model/dbface.pth")
 
         # Instead of using 3 models for showcasing, using 1 model for req
         # self.yolo_models = [YOLO("yolov8n.pt"), YOLO("yolov8n-seg"), YOLO("yolov8n-pose")]
@@ -127,12 +145,12 @@ class App(QWidget):
         # self.yolo_models = [YOLO("yolov8x-seg")]
         # self.yolo_models = [YOLO("yolov8n-pose")]
         # Object detection small model : 
-        self.yolo_models = [YOLO("yolov8n.pt")]
+        # self.yolo_models = [YOLO("yolov8n.pt")]
 
         self.selected_color = QColor(0,0,255)
 
         # Initialize the random colors otherwise 
-        opr.make_random_colors_array(num_colors=20)
+        # opr.make_random_colors_array(num_colors=20)
 
         self.ard = comm_ard.ard_connect(self)     #create object allowing communicationn with arduino
         self.initUI()    #set up UI( see below )
@@ -209,6 +227,8 @@ class App(QWidget):
         self.Servo5Min = self.ui.Servo5Min
         self.Servo5Max = self.ui.Servo5Max
 
+
+
         self.MaxObjectsTextField = self.ui.MaxObjectsTextField
         self.ConfidenceThresholdTextField = self.ui.ConfidenceThresholdTextField
         self.EllipseThicknessTextField = self.ui.EllipseThicknessTextField
@@ -216,7 +236,35 @@ class App(QWidget):
 
         # What are the values in here need to be checked and confirmed according to our setup
         self.load_init_file()
+
+        # AFTER loading from the init file and everywhere : 
+        try: 
+            print("In the try block")
+            self.Servo1MinValueFloat = float ( self.Servo1Min.text() )
+            self.Servo1MaxValueFloat = float ( self.Servo1Max.text() )
+            self.Servo2MinValueFloat = float ( self.Servo2Min.text() )
+            self.Servo2MaxValueFloat = float ( self.Servo2Max.text() )
+            self.Servo3MinValueFloat = float ( self.Servo3Min.text() )
+            self.Servo3MaxValueFloat = float ( self.Servo3Max.text() )
+            self.Servo4MinValueFloat = float ( self.Servo4Min.text() )
+            self.Servo4MaxValueFloat = float ( self.Servo4Max.text() )
+            self.Servo5MinValueFloat = float ( self.Servo5Min.text() )
+            self.Servo5MaxValueFloat = float ( self.Servo5Max.text() )
+        except Exception as e:
+            print("In the except blog because of exception:", e)
+            self.Servo1MinValueFloat = 100
+            self.Servo1MaxValueFloat = 150
+            self.Servo2MinValueFloat = 30
+            self.Servo2MaxValueFloat = 150
+            self.Servo3MinValueFloat = 30
+            self.Servo3MaxValueFloat = 40
+            self.Servo4MinValueFloat = 30
+            self.Servo4MaxValueFloat = 150
+            self.Servo5MinValueFloat = 30
+            self.Servo5MaxValueFloat = 50
+
         self.update_angles() #update angle method
+
 
         self.record()  #start recording
     
@@ -232,8 +280,6 @@ class App(QWidget):
             self.showFullScreen()
             targetWidget.showMaximized()
             print("Showing full-screen.")
-        
-
 
     # TO get the color input from the USER
     def showColorDialog(self, len_code=0):
@@ -447,6 +493,18 @@ class App(QWidget):
             # value to set  = self.Servo5Min
             # value to set  = self.Servo5Max
 
+            print("UPDATED and printing MIN MAX VALUES ---------------------------------------------")
+            print( self.Servo1MinValueFloat )
+            print( self.Servo1MaxValueFloat )
+            print( self.Servo2MinValueFloat )
+            print( self.Servo2MaxValueFloat )
+            print( self.Servo3MinValueFloat )
+            print( self.Servo3MaxValueFloat )
+            print( self.Servo4MinValueFloat )
+            print( self.Servo4MaxValueFloat )
+            print( self.Servo5MinValueFloat )
+            print( self.Servo5MaxValueFloat )
+
             self.save_init_file()
             print("values updated")
         except Exception as e:
@@ -499,6 +557,17 @@ class App(QWidget):
         self.target_tilt = random.uniform(self.min_tilt, self.max_tilt)
         self.target_pan = random.uniform(self.min_pan, self.max_pan)
 
+        # FOR NOW just set them all to 90
+        # Here it's good to set them to the "GOOD"/"best" looking angle within the targeted range.
+        # # CHANGED TO THE GOOD POSITIONS HERE 
+        self.servo1_target = SERVO1_GOOD
+        self.servo2_target = SERVO2_GOOD
+        self.servo3_target = SERVO3_GOOD
+        self.servo4_target = SERVO4_GOOD
+        self.servo5_target = SERVO5_GOOD
+
+
+
     def toggle_recording(self):
         if(self.rec):
             self.rec = False                   #stop recording
@@ -520,19 +589,19 @@ class App(QWidget):
                     processed_img = self.image_process(img) #process image (check for faces and draw circle and cross)
                     # pass
             else:                             #if arduino  not connected
-                # processed_img = img           #don't process image
+                processed_img = img           #don't process image
                 # process image even if not connected to aurdino
                 # self.worker = Worker(self, img)
                 # self.worker.result.connect(self.update_GUI)  # Handle result from the worker thread
                 # self.worker.finished.connect(self.task_finished)  # Handle task completion
                 # self.worker.start()
-                processed_img = self.image_process(img) #process image (check for faces and draw circle and cross)
+                # processed_img = self.image_process(img) #process image (check for faces and draw circle and cross)
 
 
             self.update_GUI(processed_img)    #update image in window
             cv2.waitKey(0)                    #no delay between frames
             # I don't want to move servos right now
-            # self.move_servos() #move servos
+            self.move_servos() #move servos
 
             if (not self.rec):     #allows while loop to stop if pause button pressed
                 break
@@ -572,8 +641,12 @@ class App(QWidget):
             else:
                 led_mode = 4 #turn led's off
 
-            data_to_send = "<" + str(int(self.target_pan)) + "," + str(int(self.target_tilt)) + "," + str(led_mode) + ">"
+            # data_to_send = "<" + str(int(self.target_pan)) + "," + str(int(self.target_tilt)) + "," + str(led_mode) + ">"
+
+            data_to_send = "<" + str(int(self.servo1_target)) + "," + str(int(self.servo2_target)) + "," + str(int(self.servo3_target)) + "," + str(int(self.servo4_target)) + "," + str(int(self.servo5_target)) + ","  + str(led_mode) + ">"
+            
             self.ard.runTest(data_to_send)
+            
             #the data sent to the arduino will look something like the this (<154, 23, 0>)
             #the arduino will look for the start character "<"
             #then save everything following until it finds the end character ">"
@@ -584,34 +657,125 @@ class App(QWidget):
             #I wrote this a while back and at that time I had even more to learn than I do now!
             #I still lazy and can't be asked to change it now as it works .
 
+    # def roam(self):
+    #     # This makes the robot go jittery in that case, these pan and tilt need to be adjusted 
+    #     if(self.roam_pause_count < 0 ):      #if roam count inferior to 0
+
+    #         self.roam_pause_count = self.roam_pause                                        #reset roam count
+    #         self.roam_target_pan = int(random.uniform(self.min_pan, self.max_pan))
+    #         self.roam_target_tilt = int(random.uniform(self.min_tilt, self.max_tilt))
+
+    #     else:        #if roam count > 1
+    #                  #increment pan target toward roam target
+    #         if (int(self.target_pan) > self.roam_target_pan):
+    #             self.target_pan -= 1
+    #         elif (int(self.target_pan) < self.roam_target_pan):
+    #             self.target_pan += 1
+    #         else:    #if roam target reached decrease roam pause count
+    #             self.roam_pause_count -= 1
+
+    #         if (int(self.target_tilt) > self.roam_target_tilt):
+    #             self.target_tilt -= 1
+    #         elif (int(self.target_tilt) < self.roam_target_tilt):
+    #             self.target_tilt += 1
+    #         else:
+    #             self.roam_pause_count -= 1
+
+
     def roam(self):
         # This makes the robot go jittery in that case, these pan and tilt need to be adjusted 
         if(self.roam_pause_count < 0 ):      #if roam count inferior to 0
 
             self.roam_pause_count = self.roam_pause                                        #reset roam count
-            self.roam_target_pan = int(random.uniform(self.min_pan, self.max_pan))
-            self.roam_target_tilt = int(random.uniform(self.min_tilt, self.max_tilt))
+            # self.roam_target_pan = int(random.uniform(self.min_pan, self.max_pan))
+            # self.roam_target_tilt = int(random.uniform(self.min_tilt, self.max_tilt))
+            
+            # We need 5 targets but only 4 because 2 are interconnected 
+            self.servo1_expected_target = int(random.uniform(self.Servo1MinValueFloat, self.Servo1MaxValueFloat))
+            self.servo2_expected_target = int(random.uniform(self.Servo2MinValueFloat, self.Servo2MaxValueFloat))
+            self.servo3_expected_target = int(random.uniform(self.Servo3MinValueFloat, self.Servo3MaxValueFloat))
+            self.servo4_expected_target = int(random.uniform(self.Servo4MinValueFloat, self.Servo4MaxValueFloat))
+            # Kind of not true anymore
+            self.servo5_expected_target = 180-self.servo3_expected_target
+            # print('INSIDE ROAM _____IF ')
+            # print(self.servo1_expected_target)
+            # print(self.servo2_expected_target)
+            # print(self.servo3_expected_target)
+            # print(self.servo4_expected_target)
+            # print(self.servo5_expected_target)
 
         else:        #if roam count > 1
                      #increment pan target toward roam target
-            if (int(self.target_pan) > self.roam_target_pan):
-                self.target_pan -= 1
-            elif (int(self.target_pan) < self.roam_target_pan):
-                self.target_pan += 1
-            else:    #if roam target reached decrease roam pause count
-                self.roam_pause_count -= 1
+            # if (int(self.target_pan) > self.roam_target_pan):
+            #     self.target_pan -= 1
+            # elif (int(self.target_pan) < self.roam_target_pan):
+            #     self.target_pan += 1
+            # else:    #if roam target reached decrease roam pause count
+            #     self.roam_pause_count -= 1
 
-            if (int(self.target_tilt) > self.roam_target_tilt):
-                self.target_tilt -= 1
-            elif (int(self.target_tilt) < self.roam_target_tilt):
-                self.target_tilt += 1
-            else:
-                self.roam_pause_count -= 1
+            # if (int(self.target_tilt) > self.roam_target_tilt):
+            #     self.target_tilt -= 1
+            # elif (int(self.target_tilt) < self.roam_target_tilt):
+            #     self.target_tilt += 1
+            # else:
+            #     self.roam_pause_count -= 1
+            # print("INSIDE ROAM- ELSE----------------expected vals-----")
+
+            # print(self.servo1_expected_target)
+            # print(self.servo2_expected_target)
+            # print(self.servo3_expected_target)
+            # print(self.servo4_expected_target)
+            # print(self.servo5_expected_target)
+            # # print("INSIDE ROAM--------")
+            # print('----- current')
+
+            # print(self.servo1_target)
+            # print(self.servo2_target)
+            # print(self.servo3_target)
+            # print(self.servo4_target)
+            # print(self.servo5_target)
+            # print('-----')
+            DELTA = 1
+            def find_exp(current_target_angle, expected_target_angle, roam_pause_count_old):
+                current_target_angle = int(current_target_angle)
+                expected_target_angle = int(expected_target_angle)
+                INC_OR_DEC = 0
+                if (current_target_angle > expected_target_angle):
+                    current_target_angle -= DELTA
+                    INC_OR_DEC = -DELTA
+                elif(current_target_angle < expected_target_angle):
+                    current_target_angle += DELTA
+                    INC_OR_DEC = DELTA
+                else:
+                    # roam_pause_count_old -= DELTA
+                    # Try because twice as many motors
+                    roam_pause_count_old -= 1
+                return current_target_angle, roam_pause_count_old, INC_OR_DEC
+            
+            self.servo1_target, self.roam_pause_count, _ = find_exp(self.servo1_target, self.servo1_expected_target, self.roam_pause_count)
+            self.servo2_target, self.roam_pause_count, _ = find_exp(self.servo2_target, self.servo2_expected_target, self.roam_pause_count)
+            self.servo3_target, self.roam_pause_count, s3Change = find_exp(self.servo3_target, self.servo3_expected_target, self.roam_pause_count)
+            self.servo4_target, self.roam_pause_count, _ = find_exp(self.servo4_target, self.servo4_expected_target, self.roam_pause_count)
+            # Just mannual calculation, could be a hard jerk
+            self.servo5_target -= s3Change
+            # These 5 will be sent to arduino now
+            # print("INSIDE ROAM- ELSE after changing---------------------")
+            # print(self.servo1_target)
+            # print(self.servo2_target)
+            # print(self.servo3_target)
+            # print(self.servo4_target)
+            # print(self.servo5_target)
+            # print('-----')
+            # print("__"*40)
+
+            
+
 
     def image_process(self, img):  #handle the image processing
         #to add later : introduce frame scipping (check only 1 every nframe)
-        original_image = copy.deepcopy(img)
-        processed_img = opr.find_face(img, self.max_target_distance, self.dbface)  # try to find face and return processed image
+        # original_image = copy.deepcopy(img)
+        # processed_img = opr.find_face(img, self.max_target_distance, self.dbface)  # try to find face and return processed image
+        processed_img = opr.find_face(img, self.max_target_distance)  # try to find face and return processed image
         # if face found during processing , the data return will be as following :
         #[True, image_to_check, distance_from_center_X, distance_from_center_Y, locked]
         #if not it will just return False
@@ -622,8 +786,10 @@ class App(QWidget):
             self.empty_frame_number = self.max_empty_frame  #reset empty frame count
             self.target_locked = processed_img[4]
             self.calculate_camera_move(processed_img[2], processed_img[3])  # calculate new targets depending on distance between face and image center
+            if not self.target_locked:
+                self.roam()              
             # Add yolo objects 
-            processed_img[1] = opr.visualize_objects(original_image, processed_img[1], self.yolo_models, self.threshold_dict)
+            # processed_img[1] = opr.visualize_objects(original_image, processed_img[1], self.yolo_models, self.threshold_dict)
             # Return the shiny new image here. 
             return processed_img[1]
         else:
@@ -634,11 +800,12 @@ class App(QWidget):
                 self.empty_frame_number -= 1  #decrease frame count until it equal 0
             else:
                 self.roam()              #then roam
-            img = opr.visualize_objects(original_image, img, self.yolo_models, self.threshold_dict)
+            # img = opr.visualize_objects(original_image, img, self.yolo_models, self.threshold_dict)
             return img
 
     def calculate_camera_move(self, distance_X, distance_Y):
-
+        # RIGHT now as I am making no changes in the servo_i_th motor angles, nothing will move. BUT it will also NOT roam. 
+        # So it will stay in place. 
         #self.target_pan += distance_X * self.PanSensivity
 
         if(self.InvertPan): #handle inverted pan
@@ -670,6 +837,8 @@ class App(QWidget):
                 self.target_tilt = self.max_tilt
             elif (self.target_tilt < self.min_tilt):
                 self.target_tilt = self.min_tilt
+
+        # Right now 2-xy axis to 5 motor inverse kinematics is super difficult. 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
