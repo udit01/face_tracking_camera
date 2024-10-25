@@ -19,9 +19,9 @@ import cv2
 # TODO : Encapsulate all things inside try catch, to deal with exceptions. 
 # TODO : Run from a main/bash thread , which will detect if the program has ended and re-open that, and keep doing that in a for loop
 
-# QHD is 960*540, then HD is this:
-WIDTH = 960
-HEIGHT = 540
+# QHD is 960*540, then HD is 1280*1080? this:
+WIDTH = 1300
+HEIGHT = 800
 
 
 SERVO1_GOOD = 145
