@@ -309,7 +309,7 @@ def plot_ellipse_from_bbox(frame, xywh, col=(150, 150, 150), thickness=4 ,
 #     return processed_image
 
 
-def find_face_big(image_to_check, max_target_distance, model):
+def find_face(image_to_check, max_target_distance, model):
 
     # At the end all of this code will be wrapped in an exception handler. 
     RESULT_TO_RETURN = [False]
@@ -407,7 +407,7 @@ def find_face_big(image_to_check, max_target_distance, model):
     return RESULT_TO_RETURN
 
 
-# def find_face(image_to_check, max_target_distance):
+# def find_face_orig_plus(image_to_check, max_target_distance):
 #     gray = cv2.cvtColor(image_to_check, cv2.COLOR_BGR2GRAY) #convert image to black and white
 #     faces = face_cascade.detectMultiScale(gray, 1.2, 5)     #look for faces
 

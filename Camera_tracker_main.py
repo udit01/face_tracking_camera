@@ -142,11 +142,11 @@ class App(QWidget):
 
         self.threshold_dict = threshold_dict
 
-        # self.dbface = DBFace()
-        # self.dbface.eval()
-        # if HAS_CUDA:
-        #     self.dbface.cuda()
-        # self.dbface.load("model/dbface.pth")
+        self.dbface = DBFace()
+        self.dbface.eval()
+        if HAS_CUDA:
+            self.dbface.cuda()
+        self.dbface.load("model/dbface.pth")
 
         # Instead of using 3 models for showcasing, using 1 model for req
         # self.yolo_models = [YOLO("yolov8n.pt"), YOLO("yolov8n-seg"), YOLO("yolov8n-pose")]
@@ -642,13 +642,15 @@ class App(QWidget):
                     processed_img = self.image_process(img) #process image (check for faces and draw circle and cross)
                     # pass
             else:                             #if arduino  not connected
-                processed_img = img           #don't process image
                 # process image even if not connected to aurdino
                 # self.worker = Worker(self, img)
                 # self.worker.result.connect(self.update_GUI)  # Handle result from the worker thread
                 # self.worker.finished.connect(self.task_finished)  # Handle task completion
                 # self.worker.start()
-                # processed_img = self.image_process(img) #process image (check for faces and draw circle and cross)
+
+                # on Edge devices, where the viz don't have to be performed, but now we need to see. 
+                # processed_img = img           #don't process image
+                processed_img = self.image_process(img) #process image (check for faces and draw circle and cross)
 
 
             self.update_GUI(processed_img)    #update image in window
@@ -827,8 +829,8 @@ class App(QWidget):
     def image_process(self, img):  #handle the image processing
         #to add later : introduce frame scipping (check only 1 every nframe)
         # original_image = copy.deepcopy(img)
-        # processed_img = opr.find_face(img, self.max_target_distance, self.dbface)  # try to find face and return processed image
-        processed_img = opr.find_face(img, self.max_target_distance)  # try to find face and return processed image
+        processed_img = opr.find_face(img, self.max_target_distance, self.dbface)  # try to find face and return processed image
+        # processed_img = opr.find_face(img, self.max_target_distance)  # try to find face and return processed image
         # if face found during processing , the data return will be as following :
         #[True, image_to_check, distance_from_center_X, distance_from_center_Y, locked]
         #if not it will just return False
