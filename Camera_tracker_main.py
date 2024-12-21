@@ -790,8 +790,10 @@ class App(QWidget):
             print( self.face_frame_counter,  self.change_in_dx , self.change_in_dy )
             
             
-            
+            # Need to split into two deltas, or motorwise different delta, so that they change direction
+            # Where is the inverse kinematics, i don't remember..
             DELTA = 1
+
             def find_exp(current_target_angle, expected_target_angle, roam_pause_count_old):
                 current_target_angle = int(current_target_angle)
                 expected_target_angle = int(expected_target_angle)
