@@ -46,6 +46,12 @@ def remap(value_to_map, new_range_min, new_range_max, old_range_min, old_range_m
         remapped_val = new_range_min
 
     return remapped_val
+def midpoint(p1, p2):
+    return ((p1[0] + p2[0]) // 2, (p1[1] + p2[1]) // 2)
+
+
+def l2_distance(p1, p2):
+    return np.sqrt(((p1[0] - p2[0]) **2) +  ((p1[1] - p2[1]) **2) )
 
 def plot_ellipse_from_bbox(frame, xywh, col=(150, 150, 150), thickness=4 , 
                            corner_pts_radius=10, center_circle_radius = 40, 
@@ -104,8 +110,7 @@ def plot_ellipse_from_bbox(frame, xywh, col=(150, 150, 150), thickness=4 ,
     # Don't show rectangles anymore
     # cv2.polylines(frame, [rect_points], isClosed=True, color=(255, 0, 0), thickness=2)
 
-    def midpoint(p1, p2):
-        return ((p1[0] + p2[0]) // 2, (p1[1] + p2[1]) // 2)
+
     mid_pts = []
     for i in range(4):
         pt1 = rect_points[i]
@@ -342,12 +347,41 @@ def find_face(image_to_check, max_target_distance, model):
             color = (0, 0, 255)
 
 
-        # cv2.rectangle(image_to_check,(center_face_X-10, center_face_Y), (center_face_X+10, center_face_Y),    #draw first line of the cross
-        #               color, 2)
-        # cv2.rectangle(image_to_check,(center_face_X, center_face_Y-10), (center_face_X, center_face_Y+10),    #draw second line of the cross
-        #               color,2)
+        cv2.rectangle(image_to_check,(center_face_X-10, center_face_Y), (center_face_X+10, center_face_Y),    #draw first line of the cross
+                      color, 2)
+        cv2.rectangle(image_to_check,(center_face_X, center_face_Y-10), (center_face_X, center_face_Y+10),    #draw second line of the cross
+                      color,2)
 
-        # cv2.circle(image_to_check, (int(width/2), int(height/2)), int(max_target_distance) , color, 2)    #draw circle
+        cv2.circle(image_to_check, (int(width/2), int(height/2)), int(max_target_distance) , color, 2)    #draw circle
+        
+        # Line (distance from face center to screen center, this will be updated and checked for alignment)
+        screen_center = (int(width/2), int(height/2))
+        face_center = (center_face_X, center_face_Y)
+        cv2.line(image_to_check, screen_center, face_center, color, thickness=5)  # Selected Color
+
+        line_midpoint = midpoint(screen_center, face_center)
+        distance_ = l2_distance(screen_center, face_center)
+
+        # Approximately, less than  50 is in the circle and more is not. 
+        text = f'{distance_:.2f}'
+        
+        # font = cv2.FONT_HERSHEY_SIMPLEX
+        font = cv2.FONT_HERSHEY_SCRIPT_SIMPLEX
+        
+        # THIS IS THE FONT SIZE< THAT IS THE THICKNESSSSS
+        font_scale = 1
+        # text_color_ = center_circle_text_color if MANUAL_COLOR else col  # White text_color_ in BGR
+        text_color_ = (250, 250, 250) 
+        text_thickness = 2
+
+        # Get the text size (width, height) and baseline
+        (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, text_thickness)
+
+        text_x = line_midpoint[0] - (text_width // 2)
+        text_y = line_midpoint[1] + (text_height // 2)
+
+        cv2.putText(image_to_check, text, (text_x, text_y), font, font_scale, text_color_, text_thickness, cv2.LINE_AA)
+
 
         # This is to draw the Face landmarks from DBface
         for obj in objs:

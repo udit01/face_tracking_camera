@@ -20,9 +20,9 @@ print(f"HAS_CUDA = {HAS_CUDA}")
 # TODO : Run from a main/bash thread , which will detect if the program has ended and re-open that, and keep doing that in a for loop
 
 # QHD is 960*540, then HD is this:
+# HD Is 1440, 1080
 WIDTH = 1440
-HEIGHT = 1440
-# Worker class that will run the image_process function in the background
+HEIGHT = 1080
 # Worker class that will run the image_process function in the background
 class Worker(QThread):
     # Signal to send the result back to the main thread

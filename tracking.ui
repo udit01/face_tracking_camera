@@ -25,7 +25,7 @@
      <x>230</x>
      <y>20</y>
      <width>1440</width>
-     <height>1440</height>
+     <height>1080</height>
     </rect>
    </property>
    <property name="minimumSize">
@@ -645,7 +645,7 @@
     <string>Center Circle Fill  Color</string>
    </property>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>1800</x>
@@ -789,7 +789,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>20</x>
