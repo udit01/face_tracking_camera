@@ -11,7 +11,8 @@ class ard_connect():
 
     def connect(self, port):
         try:
-            self.ser = serial.Serial(port, 115200)
+            # self.ser = serial.Serial(port, 115200)
+            self.ser = serial.Serial(port, 9600)
             self.waitForArduino()
             self.parent.is_connected = True
             return True
@@ -23,7 +24,7 @@ class ard_connect():
 
         msg = ""
         while msg.find("Hasta la vista baby") == -1:  #string.find() return -1 if value not found
-
+            print("Waiting for aurdino~")
             while self.ser.inWaiting() == 0:  #inWaiting() return number of bytes in buffer, equivalent of Serial.available in arduino
                 pass
 
