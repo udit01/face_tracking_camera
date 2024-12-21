@@ -752,12 +752,22 @@ class App(QWidget):
             # self.roam_target_tilt = int(random.uniform(self.min_tilt, self.max_tilt))
             
             # We need 5 targets but only 4 because 2 are interconnected 
-            self.servo1_expected_target = int(random.uniform(self.Servo1MinValueFloat, self.Servo1MaxValueFloat))
-            self.servo2_expected_target = int(random.uniform(self.Servo2MinValueFloat, self.Servo2MaxValueFloat))
-            self.servo3_expected_target = int(random.uniform(self.Servo3MinValueFloat, self.Servo3MaxValueFloat))
-            self.servo4_expected_target = int(random.uniform(self.Servo4MinValueFloat, self.Servo4MaxValueFloat))
-            # Kind of not true anymore
-            self.servo5_expected_target = 180-self.servo3_expected_target
+            
+            ######TESTING
+            # self.servo1_expected_target = int(random.uniform(self.Servo1MinValueFloat, self.Servo1MaxValueFloat))
+            # self.servo2_expected_target = int(random.uniform(self.Servo2MinValueFloat, self.Servo2MaxValueFloat))
+            # self.servo3_expected_target = int(random.uniform(self.Servo3MinValueFloat, self.Servo3MaxValueFloat))
+            # self.servo4_expected_target = int(random.uniform(self.Servo4MinValueFloat, self.Servo4MaxValueFloat))
+            # # Kind of not true anymore
+            # self.servo5_expected_target = 180-self.servo3_expected_target
+            # TESTING
+            # JUST SET IT to an expected good value... and then we will see if it tracks or not 
+            self.servo1_expected_target = SERVO1_GOOD
+            self.servo2_expected_target = SERVO2_GOOD
+            self.servo3_expected_target = SERVO3_GOOD
+            self.servo4_expected_target = SERVO4_GOOD
+            self.servo5_expected_target = SERVO5_GOOD
+
             # print('INSIDE ROAM _____IF ')
             # print(self.servo1_expected_target)
             # print(self.servo2_expected_target)
@@ -792,29 +802,72 @@ class App(QWidget):
             
             # Need to split into two deltas, or motorwise different delta, so that they change direction
             # Where is the inverse kinematics, i don't remember..
-            DELTA = 1
+            MAIN_DELTA = 1
 
-            def find_exp(current_target_angle, expected_target_angle, roam_pause_count_old):
+            def find_exp(current_target_angle, expected_target_angle, roam_pause_count_old, delta):
                 current_target_angle = int(current_target_angle)
                 expected_target_angle = int(expected_target_angle)
                 INC_OR_DEC = 0
                 if (current_target_angle > expected_target_angle):
-                    current_target_angle -= DELTA
-                    INC_OR_DEC = -DELTA
+                    current_target_angle -= delta
+                    INC_OR_DEC = -delta
                 elif(current_target_angle < expected_target_angle):
-                    current_target_angle += DELTA
-                    INC_OR_DEC = DELTA
+                    current_target_angle += delta
+                    INC_OR_DEC = delta
                 else:
                     # roam_pause_count_old -= DELTA
                     # Try because twice as many motors
                     roam_pause_count_old -= 1
                 return current_target_angle, roam_pause_count_old, INC_OR_DEC
             
-            self.servo1_target, self.roam_pause_count, _ = find_exp(self.servo1_target, self.servo1_expected_target, self.roam_pause_count)
-            self.servo2_target, self.roam_pause_count, _ = find_exp(self.servo2_target, self.servo2_expected_target, self.roam_pause_count)
-            self.servo3_target, self.roam_pause_count, s3Change = find_exp(self.servo3_target, self.servo3_expected_target, self.roam_pause_count)
-            self.servo4_target, self.roam_pause_count, _ = find_exp(self.servo4_target, self.servo4_expected_target, self.roam_pause_count)
-            # Just mannual calculation, could be a hard jerk
+
+
+            # Just dummy calculate the changes, DO NOT MOVE it 
+            _, _ , s1Change = find_exp(self.servo1_target, self.servo1_expected_target, self.roam_pause_count, MAIN_DELTA)
+            _, _ , s2Change = find_exp(self.servo2_target, self.servo2_expected_target, self.roam_pause_count, MAIN_DELTA)
+            _, _ , s3Change = find_exp(self.servo3_target, self.servo3_expected_target, self.roam_pause_count, MAIN_DELTA)
+            _, _ , s4Change = find_exp(self.servo4_target, self.servo4_expected_target, self.roam_pause_count, MAIN_DELTA)
+            
+            # Now change the direction of change based on change_in_dx and dy 
+            # change the expected targets also here so that they are the direction the motors follow 
+            # servo_new_expected_target = <servo_current_target +- 5 > constrained within limits
+
+
+            # FOR ALL THE SERVOS WHO have a hand in x coordinate
+            if self.change_in_dx < 0 :
+                # negative means keep going, no adjustment to target required.
+                # no adjustment to the expected target 
+                # s1 change = +s1 change (keep the same directions)
+                pass 
+            elif self.change_in_dx > 0: 
+                # Go in the opposite direction
+                # so adjustment to the adjusted target 
+                # servo1_expected_target = servo1_target(current) + 5 
+                # s1 change = -s1 change (PIVOT directions)
+
+                pass 
+            else : 
+                # change in dx is (distance x is zero) so where should I move? Keep moving in the current direction i guess 
+                pass 
+
+            ## same for dy... for the servos who have a hand in Y coordinate
+            ## THEN check and keep going?
+            ## MAYBE NEED TO KEEP an array (memory) of the going and coming directions as well. 
+
+
+
+            ###### s1Change and others will have modified values now. 
+            ##### OR MAYBE, setting the expected_target's direction to the correct one automatically enforces the correct,
+            # Don't need to play with delta 
+
+            self.servo1_target, self.roam_pause_count, s1Change = find_exp(self.servo1_target, self.servo1_expected_target, self.roam_pause_count, MAIN_DELTA ) # OR si_change)
+            self.servo2_target, self.roam_pause_count, s2Change = find_exp(self.servo2_target, self.servo2_expected_target, self.roam_pause_count, MAIN_DELTA ) # OR si_change)
+            self.servo3_target, self.roam_pause_count, s3Change = find_exp(self.servo3_target, self.servo3_expected_target, self.roam_pause_count, MAIN_DELTA ) # OR si_change)
+            self.servo4_target, self.roam_pause_count, s4Change = find_exp(self.servo4_target, self.servo4_expected_target, self.roam_pause_count, MAIN_DELTA ) # OR si_change)
+            
+            
+            
+            # Just manual calculation, could be a hard jerk
             self.servo5_target -= s3Change
             # These 5 will be sent to arduino now
             # print("INSIDE ROAM- ELSE after changing---------------------")
