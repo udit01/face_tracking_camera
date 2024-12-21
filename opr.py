@@ -361,6 +361,9 @@ def find_face(image_to_check, max_target_distance, model):
 
         line_midpoint = midpoint(screen_center, face_center)
         distance_ = l2_distance(screen_center, face_center)
+        
+        delta_x = face_center[0] - screen_center[0]
+        delta_y = face_center[1] - screen_center[1]
 
         # Approximately, less than  50 is in the circle and more is not. 
         text = f'{distance_:.2f}'
@@ -387,7 +390,7 @@ def find_face(image_to_check, max_target_distance, model):
         for obj in objs:
             common.drawbbox(image_to_check, obj, landmarkcolor=(255,255,255))
         # IF FACE is found, modify the result: 
-        RESULT_TO_RETURN =  [True, image_to_check, distance_from_center_X, distance_from_center_Y, locked]
+        RESULT_TO_RETURN =  [True, image_to_check, distance_from_center_X, distance_from_center_Y, locked, delta_x, delta_y]
 
     return RESULT_TO_RETURN
 

@@ -257,8 +257,6 @@ class App(QWidget):
             targetWidget.showMaximized()
             print("Showing full-screen.")
         
-
-
     # TO get the color input from the USER
     def showColorDialog(self, len_code=0):
         # TODO: Encapsulate in a try except for final version.
