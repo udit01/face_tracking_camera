@@ -23,6 +23,7 @@ print(f"HAS_CUDA = {HAS_CUDA}")
 WIDTH = 1300
 HEIGHT = 800
 
+MAX_FACE_DELTA_FC = 50
 
 SERVO1_GOOD = 145
 SERVO2_GOOD = 110
@@ -159,10 +160,17 @@ class App(QWidget):
 
         self.selected_color = QColor(0,0,255)
 
+        # Counting frames and storing detlas 
+        # Store 50 frames and no more
+        self.face_frame_counter = 0
+        self.delta_x_arr = [0 for _ in range (MAX_FACE_DELTA_FC)]
+        self.delta_y_arr = [0 for _ in range (MAX_FACE_DELTA_FC)]
+        self.change_in_dx = 0 
+        self.change_in_dy = 0 
         # Initialize the random colors otherwise 
         # opr.make_random_colors_array(num_colors=20)
 
-        self.ard = comm_ard.ard_connect(self)     #create object allowing communicationn with arduino
+        self.ard = comm_ard.ard_connect(self)     #create object allowing communication with arduino
         self.initUI()    #set up UI( see below )
 
     def initUI(self):     #UI related stuff
@@ -619,8 +627,6 @@ class App(QWidget):
         self.servo4_target = SERVO4_GOOD
         self.servo5_target = SERVO5_GOOD
 
-
-
     def toggle_recording(self):
         if(self.rec):
             self.rec = False                   #stop recording
@@ -759,21 +765,7 @@ class App(QWidget):
             # print(self.servo4_expected_target)
             # print(self.servo5_expected_target)
 
-        else:        #if roam count > 1
-                     #increment pan target toward roam target
-            # if (int(self.target_pan) > self.roam_target_pan):
-            #     self.target_pan -= 1
-            # elif (int(self.target_pan) < self.roam_target_pan):
-            #     self.target_pan += 1
-            # else:    #if roam target reached decrease roam pause count
-            #     self.roam_pause_count -= 1
-
-            # if (int(self.target_tilt) > self.roam_target_tilt):
-            #     self.target_tilt -= 1
-            # elif (int(self.target_tilt) < self.roam_target_tilt):
-            #     self.target_tilt += 1
-            # else:
-            #     self.roam_pause_count -= 1
+        else:
             # print("INSIDE ROAM- ELSE----------------expected vals-----")
 
             # print(self.servo1_expected_target)
@@ -790,6 +782,15 @@ class App(QWidget):
             # print(self.servo4_target)
             # print(self.servo5_target)
             # print('-----')
+
+            # TODO: CURRENT WORK BOOKMARK
+            # Now we have these values, and these should be negative as we go to the face. 
+            # If these are positive then reverse the direction of where we were going 
+            # If these are negative then keep going in the same direction.
+            print( self.face_frame_counter,  self.change_in_dx , self.change_in_dy )
+            
+            
+            
             DELTA = 1
             def find_exp(current_target_angle, expected_target_angle, roam_pause_count_old):
                 current_target_angle = int(current_target_angle)
@@ -841,6 +842,24 @@ class App(QWidget):
             self.empty_frame_number = self.max_empty_frame  #reset empty frame count
             self.target_locked = processed_img[4]
             self.calculate_camera_move(processed_img[2], processed_img[3])  # calculate new targets depending on distance between face and image center
+            
+            # NOW INCREASE THE FRAME COUNTER AND CALCULATE THE custom CAMERA MOVE!!
+            prev_frame = self.face_frame_counter
+
+            self.face_frame_counter += 1
+            # self.face_frame_counter %= MAX_FACE_DELTA_FC
+            prev_dx = self.delta_x_arr[prev_frame%MAX_FACE_DELTA_FC] 
+            prev_dy = self.delta_y_arr[prev_frame%MAX_FACE_DELTA_FC] 
+            
+            self.delta_x_arr[self.face_frame_counter%MAX_FACE_DELTA_FC] = curr_dx = processed_img[5]
+            self.delta_y_arr[self.face_frame_counter%MAX_FACE_DELTA_FC] = curr_dy = processed_img[6]
+            
+            # if not locked 
+            # now find out if the delta increase or decrease 
+            if not self.target_locked: 
+                self.change_in_dx = curr_dx - prev_dx
+                self.change_in_dy = curr_dy - prev_dy
+            
             if not self.target_locked:
                 self.roam()              
             # Add yolo objects 
