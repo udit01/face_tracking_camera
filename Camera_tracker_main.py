@@ -882,7 +882,6 @@ class App(QWidget):
 
             
 
-
     def image_process(self, img):  #handle the image processing
         #to add later : introduce frame scipping (check only 1 every nframe)
         # original_image = copy.deepcopy(img)
@@ -897,6 +896,8 @@ class App(QWidget):
             self.face_detected = True
             self.empty_frame_number = self.max_empty_frame  #reset empty frame count
             self.target_locked = processed_img[4]
+
+            
             self.calculate_camera_move(processed_img[2], processed_img[3])  # calculate new targets depending on distance between face and image center
             
             # NOW INCREASE THE FRAME COUNTER AND CALCULATE THE custom CAMERA MOVE!!
