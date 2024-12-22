@@ -797,7 +797,8 @@ class App(QWidget):
             # Now we have these values, and these should be negative as we go to the face. 
             # If these are positive then reverse the direction of where we were going 
             # If these are negative then keep going in the same direction.
-            print( self.face_frame_counter,  self.change_in_dx , self.change_in_dy )
+            
+            # print( self.face_frame_counter,  self.change_in_dx , self.change_in_dy )
             
             
             # Need to split into two deltas, or motorwise different delta, so that they change direction

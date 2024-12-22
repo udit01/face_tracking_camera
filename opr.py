@@ -19,7 +19,7 @@ SHOW_CENTER_CONFIDENCE = True
 # COLOR_COUNTER = 0 
 
 MANUAL_COLOR = False 
-face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+# face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 # INTENDED TO BE CALLED ONCE INSIDE the init function
 # def make_random_colors_array(num_colors=20):
@@ -308,6 +308,42 @@ def plot_ellipse_from_bbox(frame, xywh, col=(150, 150, 150), thickness=4 ,
     
 #     return processed_image
 
+def draw_line_with_text(image, pt1, pt2, color_, prefix=''):
+     
+        # Line (distance from face center to screen center, this will be updated and checked for alignment)
+        # screen_center = (int(width/2), int(height/2))
+        # face_center = (center_face_X, center_face_Y)
+        cv2.line(image, pt1, pt2, color_, thickness=5)  # Selected Color
+
+        line_midpoint = midpoint(pt1, pt2)
+        distance_ = l2_distance(pt1, pt2)
+        
+        delta_x = pt2[0] - pt1[0]
+        delta_y = pt2[1] - pt1[1]
+
+        # Approximately, less than  50 is in the circle and more is not. 
+        text = f'{prefix}{distance_:.2f}'
+        
+        # font = cv2.FONT_HERSHEY_SIMPLEX
+        font = cv2.FONT_HERSHEY_SCRIPT_SIMPLEX
+        
+        # THIS IS THE FONT SIZE< THAT IS THE THICKNESSSSS
+        font_scale = 1
+        # text_color_ = center_circle_text_color if MANUAL_COLOR else col  # White text_color_ in BGR
+        text_color_ = (250, 250, 250) 
+        text_thickness = 2
+
+        # Get the text size (width, height) and baseline
+        (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, text_thickness)
+
+        text_x = line_midpoint[0] - (text_width // 2)
+        text_y = line_midpoint[1] + (text_height // 2)
+
+        cv2.putText(image, text, (text_x, text_y), font, font_scale, text_color_, text_thickness, cv2.LINE_AA)
+        
+        return delta_x, delta_y
+
+
 
 def find_face(image_to_check, max_target_distance, model):
 
@@ -397,6 +433,8 @@ def find_face(image_to_check, max_target_distance, model):
 
         cv2.putText(image_to_check, text, (text_x, text_y), font, font_scale, text_color_, text_thickness, cv2.LINE_AA)
 
+        draw_line_with_text(image_to_check, screen_center, (face_center[0], screen_center[1]), color_=color, prefix='x:') 
+        draw_line_with_text(image_to_check, (face_center[0], screen_center[1]), face_center, color_=color, prefix='y:') 
 
         # This is to draw the Face landmarks from DBface
         for obj in objs:
