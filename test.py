@@ -1,13 +1,79 @@
 import cv2
+import torch
+from opr import find_face
+from model.DBFace import DBFace
+import comm_ard
+HAS_CUDA = torch.cuda.is_available()
+print(f"HAS_CUDA = {HAS_CUDA}")
 
-cam = cv2.VideoCapture(0)
+class Controller():
+	def __init__(self):
+		self.ard = comm_ard.ard_connect(self)     #create object allowing communication with arduino
+		self.is_connected = False 
+		
+		self.cam = cv2.VideoCapture(0)
 
-while True:
-	ret, image = cam.read()
-	cv2.imshow('Imagetest',image)
-	k = cv2.waitKey(1)
-	if k != -1:
-		break
-cv2.imwrite('/home/pi/testimage.jpg', image)
-cam.release()
-cv2.destroyAllWindows()
+		self.dbface = DBFace()
+		self.dbface.eval()
+		if HAS_CUDA:
+			self.dbface = self.dbface.cuda()
+		self.dbface.load("model/dbface.pth")
+
+		self.servo_x_target = 90
+		self.servo_y_target = 90
+		
+
+
+
+	def connect(self, port_number):    #set COM port from text box if arduino not already connected
+		# This functions hangs somehow.... Different from camera change freeze. 
+		if(not self.is_connected):
+			port = port_number
+			if (self.ard.connect(port)):    #set port label message
+				msg = "..................... Connected to port : " + port + " ......................"
+			else:
+				msg = ".................... Cant connect to port : " + port + " ....................."
+			print(msg)
+	
+	def move_servos(self):
+		if (self.is_connected):
+
+			if self.LED_ON and not self.manual_mode:
+				if not self.face_detected: #set led mode (0:red, 1:yellow 2:green)
+					led_mode = 0
+				else:
+					if self.target_locked:
+						led_mode = 1
+					else :
+						led_mode = 2
+
+			elif self.LED_ON and self.manual_mode:
+				led_mode = 3 #turn all led's on
+			else:
+				led_mode = 4 #turn led's off
+
+			# data_to_send = "<" + str(int(self.target_pan)) + "," + str(int(self.target_tilt)) + "," + str(led_mode) + ">"
+
+			data_to_send = "<" + str(int(self.servo1_target)) + "," + str(int(self.servo2_target)) + "," + str(int(self.servo3_target)) + "," + str(int(self.servo4_target)) + "," + str(int(self.servo5_target)) + ","  + str(led_mode) + ">"
+			
+			self.ard.runTest(data_to_send)
+            
+	def show(self):			
+		while True:
+			ret, image = self.cam.read()
+			RESULT = find_face(image, 50, self.dbface)
+			# If face found, 
+			if RESULT[0]:
+				image = RESULT[1]
+			cv2.imshow('Fisheye',image)
+			k = cv2.waitKey(1)
+			if k != -1:
+				break
+		cv2.imwrite('D:\Github\face_tracking_camera\outputs', image)
+		self.cam.release()
+		cv2.destroyAllWindows()
+
+
+ctrl = Controller()
+ctrl.show()
+
