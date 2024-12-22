@@ -250,7 +250,7 @@ class DBFace(nn.Module):
         checkpoint = torch.load(file, map_location="cpu")
         self.load_state_dict(checkpoint)
 
-
+    #@torch.autocast(device_type="cpu", dtype=torch.float32)
     def forward(self, x):
         s4, s8, s16, s32 = self.bb(x)
         s32 = self.conv3(s32)

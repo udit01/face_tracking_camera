@@ -3,8 +3,8 @@ import math
 import common
 import numpy as np
 # from scipy.spatial import KDTree
-from model.DBFace import DBFace
-from dbface_main import detect
+#from model.DBFace import DBFace
+#from dbface_main import detect
 from collections import defaultdict
 
 SHOW_FACES = True
@@ -19,7 +19,7 @@ SHOW_CENTER_CONFIDENCE = True
 # COLOR_COUNTER = 0 
 
 MANUAL_COLOR = False 
-# face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 # INTENDED TO BE CALLED ONCE INSIDE the init function
 # def make_random_colors_array(num_colors=20):
@@ -352,6 +352,105 @@ def draw_line_with_text(image, pt1, pt2, color_, prefix=''):
         return delta_x, delta_y
 
 
+
+def find_face_basic(image_to_check, max_target_distance):
+
+    # At the end all of this code will be wrapped in an exception handler. 
+    RESULT_TO_RETURN = [False]
+    gray = cv2.cvtColor(image_to_check, cv2.COLOR_BGR2GRAY) #convert image to black and white
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.05, minNeighbors=3)     #look for faces
+
+    # Detect faces from DBFace
+    #objs = detect(model, image_to_check)
+
+    # Objects is a list of tuples (bbox, landmarks)
+    # I don't know but assuming that the they are already sorted in descending order of scores. 
+    #faces = []
+    #for bbox in objs:
+    #    x1, y1 = bbox.x, bbox.y
+    #    w, h = bbox.width, bbox.height
+    #    faces.append( [x1, y1, w, h])
+    # Constructing an object like before 
+    # print("In opr printing faces:=-----")
+    # print(faces)
+
+    # TODO : RIGHT NOW, IF NO FACES DETECTED, EVEN THE YOLO OBJECTS WON"T BE DRAWN, 
+    # NEED to decouple those modules and have independence
+    # DONE
+    if len(faces) >= 1: #if face(s) detected
+        faces = list(faces)[0] #if several faces found use the first one
+
+        x = faces[0]
+        y = faces[1]
+        w = faces[2]
+        h = faces[3]
+
+        center_face_X = int(x + w / 2)
+        center_face_Y = int(y + h / 2)
+        height, width, channels = image_to_check.shape
+
+        distance_from_center_X = (center_face_X - width/2)/220 # why? can't remember why I did this
+        distance_from_center_Y = (center_face_Y - height/2)/195 # why?
+
+        target_distance = math.sqrt((distance_from_center_X*220)**2 + (distance_from_center_Y*195)**2) # calculate distance between image center and face center
+
+        if target_distance < max_target_distance :#set added geometry colour
+            locked = True
+            color = (0, 255, 0)
+        else:
+            locked = False
+            color = (0, 0, 255)
+
+
+        cv2.rectangle(image_to_check,(center_face_X-10, center_face_Y), (center_face_X+10, center_face_Y),    #draw first line of the cross
+                      color, 2)
+        cv2.rectangle(image_to_check,(center_face_X, center_face_Y-10), (center_face_X, center_face_Y+10),    #draw second line of the cross
+                      color,2)
+
+        cv2.circle(image_to_check, (int(width/2), int(height/2)), int(max_target_distance) , color, 2)    #draw circle
+
+ 
+        # Line (distance from face center to screen center, this will be updated and checked for alignment)
+        screen_center = (int(width/2), int(height/2))
+        face_center = (center_face_X, center_face_Y)
+        # cv2.line(image_to_check, screen_center, face_center, color, thickness=5)  # Selected Color
+
+        # line_midpoint = midpoint(screen_center, face_center)
+        # distance_ = l2_distance(screen_center, face_center)
+        
+        delta_x = face_center[0] - screen_center[0]
+        delta_y = face_center[1] - screen_center[1]
+
+        # # Approximately, less than  50 is in the circle and more is not. 
+        # text = f'{distance_:.2f}'
+        
+        # # font = cv2.FONT_HERSHEY_SIMPLEX
+        # font = cv2.FONT_HERSHEY_SCRIPT_SIMPLEX
+        
+        # # THIS IS THE FONT SIZE< THAT IS THE THICKNESSSSS
+        # font_scale = 1
+        # # text_color_ = center_circle_text_color if MANUAL_COLOR else col  # White text_color_ in BGR
+        # text_color_ = (250, 250, 250) 
+        # text_thickness = 2
+
+        # # Get the text size (width, height) and baseline
+        # (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, text_thickness)
+
+        # text_x = line_midpoint[0] - (text_width // 2)
+        # text_y = line_midpoint[1] + (text_height // 2)
+
+        # cv2.putText(image_to_check, text, (text_x, text_y), font, font_scale, text_color_, text_thickness, cv2.LINE_AA)
+
+        draw_line_with_text(image_to_check, screen_center, (face_center[0], screen_center[1]), color_=color, prefix='x:') 
+        draw_line_with_text(image_to_check, (face_center[0], screen_center[1]), face_center, color_=color, prefix='y:') 
+
+        # This is to draw the Face landmarks from DBface
+        #for obj in objs:
+        #    common.drawbbox(image_to_check, obj, landmarkcolor=(255,255,255))
+        # IF FACE is found, modify the result: 
+        RESULT_TO_RETURN =  [True, image_to_check, distance_from_center_X, distance_from_center_Y, locked, delta_x, delta_y]
+
+    return RESULT_TO_RETURN
 
 def find_face(image_to_check, max_target_distance, model):
 
