@@ -51,19 +51,19 @@ class Controller():
 		if (self.is_connected):
 			
 			# NEED TO CHANGE LED LOGIC LATER 
-			led_mode = 3
-			# if self.LED_ON and not self.manual_mode:
-			# 	if not self.face_detected: #set led mode (0:red, 1:yellow 2:green)
+			led_mode = 1
+			#if self.LED_ON and not self.manual_mode:
+			#if not self.face_detected: #set led mode (0:red, 1:yellow 2:green)
 			# 		led_mode = 0
-			# 	else:
-			# 		if self.target_locked:
-			# 			led_mode = 1
-			# 		else :
-			# 			led_mode = 2
+			#	else:
+			#		if self.target_locked:
+			 #			led_mode = 1
+			#		else :
+			 #			led_mode = 2
 
 			# elif self.LED_ON and self.manual_mode:
 			# 	led_mode = 3 #turn all led's on
-			# else:
+			#else:
 			# 	led_mode = 4 #turn led's off
 
 			# data_to_send = "<" + str(int(self.target_pan)) + "," + str(int(self.target_tilt)) + "," + str(led_mode) + ">"
@@ -105,8 +105,9 @@ class Controller():
 			self.servo_x_target = self.get_ratio(dx, w/2.0, self.servo_x_center, self.servo_x_range)
 			self.servo_y_target = self.get_ratio(dy, h/2.0, self.servo_y_center, self.servo_y_range)
 			print(self.servo_x_target, self.servo_y_target)
-			# time.sleep(0.3)
+			led_mode = 2
 			# print(dx, dy)
+			
 			self.move_servos()
 		else :
 			xr = self.servo_x_range
@@ -115,7 +116,7 @@ class Controller():
 			self.servo_y_target = random.randint(60, 100)
 			print("Sending random values: ")
 			print(self.servo_x_target, self.servo_y_target)
-			# time.sleep(0.3)
+			time.sleep(0.8)
 			# print(dx, dy)
 			self.move_servos() 
 			
@@ -139,4 +140,3 @@ class Controller():
 ctrl = Controller()
 ctrl.connect("/dev/ttyUSB0")
 ctrl.show()
-
