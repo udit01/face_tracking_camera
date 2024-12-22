@@ -3,6 +3,8 @@ import torch
 from opr import find_face
 from model.DBFace import DBFace
 import comm_ard
+import time 
+
 HAS_CUDA = torch.cuda.is_available()
 print(f"HAS_CUDA = {HAS_CUDA}")
 
@@ -19,10 +21,17 @@ class Controller():
 			self.dbface = self.dbface.cuda()
 		self.dbface.load("model/dbface.pth")
 
+		self.servo_x_center = 90
+		self.servo_y_center = 90
+
 		self.servo_x_target = 90
 		self.servo_y_target = 90
-		
 
+		self.servo_x_range = [40, 140]
+		self.servo_y_range = [30, 120]
+		
+		self.screen_width = 500
+		self.screen_height = 500
 
 
 	def connect(self, port_number):    #set COM port from text box if arduino not already connected
@@ -37,35 +46,68 @@ class Controller():
 	
 	def move_servos(self):
 		if (self.is_connected):
+			
+			# NEED TO CHANGE LED LOGIC LATER 
+			led_mode = 3
+			# if self.LED_ON and not self.manual_mode:
+			# 	if not self.face_detected: #set led mode (0:red, 1:yellow 2:green)
+			# 		led_mode = 0
+			# 	else:
+			# 		if self.target_locked:
+			# 			led_mode = 1
+			# 		else :
+			# 			led_mode = 2
 
-			if self.LED_ON and not self.manual_mode:
-				if not self.face_detected: #set led mode (0:red, 1:yellow 2:green)
-					led_mode = 0
-				else:
-					if self.target_locked:
-						led_mode = 1
-					else :
-						led_mode = 2
-
-			elif self.LED_ON and self.manual_mode:
-				led_mode = 3 #turn all led's on
-			else:
-				led_mode = 4 #turn led's off
+			# elif self.LED_ON and self.manual_mode:
+			# 	led_mode = 3 #turn all led's on
+			# else:
+			# 	led_mode = 4 #turn led's off
 
 			# data_to_send = "<" + str(int(self.target_pan)) + "," + str(int(self.target_tilt)) + "," + str(led_mode) + ">"
 
-			data_to_send = "<" + str(int(self.servo1_target)) + "," + str(int(self.servo2_target)) + "," + str(int(self.servo3_target)) + "," + str(int(self.servo4_target)) + "," + str(int(self.servo5_target)) + ","  + str(led_mode) + ">"
+			# data_to_send = "<" + str(int(self.servo1_target)) + "," + str(int(self.servo2_target)) + "," + str(int(self.servo3_target)) + "," + str(int(self.servo4_target)) + "," + str(int(self.servo5_target)) + ","  + str(led_mode) + ">"
+			data_to_send = "<" + str(int(self.servo_x_target)) + "," + str(int(self.servo_y_target)) +  ","  + str(led_mode) + ">"
 			
 			self.ard.runTest(data_to_send)
-            
+	
+	def get_ratio(self, delta, delta_max,  angle_center, angle_range):
+		if abs(delta) <= 1: 
+			return angle_center
+		ratio = (delta*1.0)/delta_max
+		ratio = abs(ratio)
+		sign = delta / abs(delta)
+		# trimmed_range = angle_range
+		if sign>=0:
+			trimmed_range = [angle_center, angle_range[1]]
+		else : 
+			trimmed_range = [angle_range[0], angle_center]
+		target_angle = angle_center + sign * (trimmed_range[1] - trimmed_range[0]) * ratio 
+		return int(target_angle)
+		
+
+	def process_image(self, image_to_proc): 
+		RESULT = find_face(image_to_proc, 50, self.dbface)
+		# If face found, 
+		if RESULT[0]:
+			image_to_proc = RESULT[1]
+			dx = RESULT[5]
+			dy = RESULT[6]
+			h,w,c = image_to_proc.shape 
+			print("_"*50)
+			print(w, h , dx, dy ) 
+			self.servo_x_target = self.get_ratio(dx, w/2.0, self.servo_x_center, self.servo_x_range)
+			self.servo_y_target = self.get_ratio(dy, h/2.0, self.servo_y_center, self.servo_y_range)
+			print(self.servo_x_target, self.servo_y_target)
+			time.sleep(0.3)
+			# print(dx, dy)
+		return image_to_proc
+	
+
 	def show(self):			
 		while True:
 			ret, image = self.cam.read()
-			RESULT = find_face(image, 50, self.dbface)
-			# If face found, 
-			if RESULT[0]:
-				image = RESULT[1]
-			cv2.imshow('Fisheye',image)
+
+			cv2.imshow('Fisheye',self.process_image(image))
 			k = cv2.waitKey(1)
 			if k != -1:
 				break
@@ -75,5 +117,6 @@ class Controller():
 
 
 ctrl = Controller()
+# ctrl.connect(3)
 ctrl.show()
 

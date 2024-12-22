@@ -321,8 +321,16 @@ def draw_line_with_text(image, pt1, pt2, color_, prefix=''):
         delta_x = pt2[0] - pt1[0]
         delta_y = pt2[1] - pt1[1]
 
+        final_sign = ''
+        signx = '+' if delta_x > 0 else '-'
+        signy = '+' if delta_y > 0 else '-'
+        if prefix[0] == 'x':
+            final_sign = signx
+        elif prefix[0] == 'y':
+            final_sign = signy
+
         # Approximately, less than  50 is in the circle and more is not. 
-        text = f'{prefix}{distance_:.2f}'
+        text = f'{prefix}{final_sign}{distance_:.2f}'
         
         # font = cv2.FONT_HERSHEY_SIMPLEX
         font = cv2.FONT_HERSHEY_SCRIPT_SIMPLEX
@@ -331,7 +339,7 @@ def draw_line_with_text(image, pt1, pt2, color_, prefix=''):
         font_scale = 1
         # text_color_ = center_circle_text_color if MANUAL_COLOR else col  # White text_color_ in BGR
         text_color_ = (250, 250, 250) 
-        text_thickness = 2
+        text_thickness = 1
 
         # Get the text size (width, height) and baseline
         (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, text_thickness)
@@ -405,33 +413,33 @@ def find_face(image_to_check, max_target_distance, model):
         # Line (distance from face center to screen center, this will be updated and checked for alignment)
         screen_center = (int(width/2), int(height/2))
         face_center = (center_face_X, center_face_Y)
-        cv2.line(image_to_check, screen_center, face_center, color, thickness=5)  # Selected Color
+        # cv2.line(image_to_check, screen_center, face_center, color, thickness=5)  # Selected Color
 
-        line_midpoint = midpoint(screen_center, face_center)
-        distance_ = l2_distance(screen_center, face_center)
+        # line_midpoint = midpoint(screen_center, face_center)
+        # distance_ = l2_distance(screen_center, face_center)
         
         delta_x = face_center[0] - screen_center[0]
         delta_y = face_center[1] - screen_center[1]
 
-        # Approximately, less than  50 is in the circle and more is not. 
-        text = f'{distance_:.2f}'
+        # # Approximately, less than  50 is in the circle and more is not. 
+        # text = f'{distance_:.2f}'
         
-        # font = cv2.FONT_HERSHEY_SIMPLEX
-        font = cv2.FONT_HERSHEY_SCRIPT_SIMPLEX
+        # # font = cv2.FONT_HERSHEY_SIMPLEX
+        # font = cv2.FONT_HERSHEY_SCRIPT_SIMPLEX
         
-        # THIS IS THE FONT SIZE< THAT IS THE THICKNESSSSS
-        font_scale = 1
-        # text_color_ = center_circle_text_color if MANUAL_COLOR else col  # White text_color_ in BGR
-        text_color_ = (250, 250, 250) 
-        text_thickness = 2
+        # # THIS IS THE FONT SIZE< THAT IS THE THICKNESSSSS
+        # font_scale = 1
+        # # text_color_ = center_circle_text_color if MANUAL_COLOR else col  # White text_color_ in BGR
+        # text_color_ = (250, 250, 250) 
+        # text_thickness = 2
 
-        # Get the text size (width, height) and baseline
-        (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, text_thickness)
+        # # Get the text size (width, height) and baseline
+        # (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, text_thickness)
 
-        text_x = line_midpoint[0] - (text_width // 2)
-        text_y = line_midpoint[1] + (text_height // 2)
+        # text_x = line_midpoint[0] - (text_width // 2)
+        # text_y = line_midpoint[1] + (text_height // 2)
 
-        cv2.putText(image_to_check, text, (text_x, text_y), font, font_scale, text_color_, text_thickness, cv2.LINE_AA)
+        # cv2.putText(image_to_check, text, (text_x, text_y), font, font_scale, text_color_, text_thickness, cv2.LINE_AA)
 
         draw_line_with_text(image_to_check, screen_center, (face_center[0], screen_center[1]), color_=color, prefix='x:') 
         draw_line_with_text(image_to_check, (face_center[0], screen_center[1]), face_center, color_=color, prefix='y:') 
