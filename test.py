@@ -1,12 +1,13 @@
 import cv2
-import torch
-from opr import find_face
-from model.DBFace import DBFace
+#import torch
+from opr import find_face, find_face_basic
+#from model.DBFace import DBFace
 import comm_ard
 import time 
-
-HAS_CUDA = torch.cuda.is_available()
-print(f"HAS_CUDA = {HAS_CUDA}")
+import random
+#HAS_CUDA = torch.cuda.is_available()
+#print(f"HAS_CUDA = {HAS_CUDA}")
+#face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 class Controller():
 	def __init__(self):
@@ -14,12 +15,14 @@ class Controller():
 		self.is_connected = False 
 		
 		self.cam = cv2.VideoCapture(0)
-
-		self.dbface = DBFace()
-		self.dbface.eval()
-		if HAS_CUDA:
-			self.dbface = self.dbface.cuda()
-		self.dbface.load("model/dbface.pth")
+		self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, 480)
+		self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 320)
+		#self.dbface = DBFace()
+		#self.dbface.eval()
+		#if HAS_CUDA:
+		#	self.dbface = self.dbface.cuda()
+		#self.dbface.load("model/dbface.pth")
+		#self.dbface.load("model/dbfaceSmallH.pth")
 
 		self.servo_x_center = 90
 		self.servo_y_center = 90
@@ -48,19 +51,19 @@ class Controller():
 		if (self.is_connected):
 			
 			# NEED TO CHANGE LED LOGIC LATER 
-			led_mode = 3
-			# if self.LED_ON and not self.manual_mode:
-			# 	if not self.face_detected: #set led mode (0:red, 1:yellow 2:green)
+			led_mode = 1
+			#if self.LED_ON and not self.manual_mode:
+			#if not self.face_detected: #set led mode (0:red, 1:yellow 2:green)
 			# 		led_mode = 0
-			# 	else:
-			# 		if self.target_locked:
-			# 			led_mode = 1
-			# 		else :
-			# 			led_mode = 2
+			#	else:
+			#		if self.target_locked:
+			 #			led_mode = 1
+			#		else :
+			 #			led_mode = 2
 
 			# elif self.LED_ON and self.manual_mode:
 			# 	led_mode = 3 #turn all led's on
-			# else:
+			#else:
 			# 	led_mode = 4 #turn led's off
 
 			# data_to_send = "<" + str(int(self.target_pan)) + "," + str(int(self.target_tilt)) + "," + str(led_mode) + ">"
@@ -81,25 +84,42 @@ class Controller():
 			trimmed_range = [angle_center, angle_range[1]]
 		else : 
 			trimmed_range = [angle_range[0], angle_center]
-		target_angle = angle_center + sign * (trimmed_range[1] - trimmed_range[0]) * ratio 
+		FACTOR = 1.3
+		target_angle = angle_center + (FACTOR) * sign * (trimmed_range[1] - trimmed_range[0]) * ratio 
+		#target_angle *= 1.3
 		return int(target_angle)
 		
 
 	def process_image(self, image_to_proc): 
-		RESULT = find_face(image_to_proc, 50, self.dbface)
+		#RESULT = find_face(image_to_proc, 50, self.dbface)
+		RESULT = find_face_basic(image_to_proc, 50)
+		
 		# If face found, 
 		if RESULT[0]:
 			image_to_proc = RESULT[1]
-			dx = RESULT[5]
-			dy = RESULT[6]
+			dx = -RESULT[5]
+			dy = -RESULT[6]
 			h,w,c = image_to_proc.shape 
 			print("_"*50)
 			print(w, h , dx, dy ) 
 			self.servo_x_target = self.get_ratio(dx, w/2.0, self.servo_x_center, self.servo_x_range)
 			self.servo_y_target = self.get_ratio(dy, h/2.0, self.servo_y_center, self.servo_y_range)
 			print(self.servo_x_target, self.servo_y_target)
-			time.sleep(0.3)
+			led_mode = 2
 			# print(dx, dy)
+			
+			self.move_servos()
+		else :
+			xr = self.servo_x_range
+			yr = self.servo_y_range
+			self.servo_x_target = random.randint(50, 100)
+			self.servo_y_target = random.randint(60, 100)
+			print("Sending random values: ")
+			print(self.servo_x_target, self.servo_y_target)
+			time.sleep(0.8)
+			# print(dx, dy)
+			self.move_servos() 
+			
 		return image_to_proc
 	
 
@@ -111,12 +131,12 @@ class Controller():
 			k = cv2.waitKey(1)
 			if k != -1:
 				break
-		cv2.imwrite('D:\Github\face_tracking_camera\outputs', image)
+		#cv2.imwrite('D:\Github\face_tracking_camera\outputs', image)
+		cv2.imwrite('/home/pi', image)
 		self.cam.release()
 		cv2.destroyAllWindows()
 
 
 ctrl = Controller()
-# ctrl.connect(3)
+ctrl.connect("/dev/ttyUSB0")
 ctrl.show()
-

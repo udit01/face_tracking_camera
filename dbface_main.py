@@ -5,8 +5,8 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 import cv2
-from model.DBFace import DBFace
-
+#from model.DBFace import DBFace
+from model.DBFaceSmallH import DBFace
 HAS_CUDA = torch.cuda.is_available()
 print(f"HAS_CUDA = {HAS_CUDA}")
 
@@ -40,13 +40,21 @@ def detect(model, image, threshold=0.4, nms_iou=0.5):
     image = ((image / 255.0 - mean) / std).astype(np.float32)
     image = image.transpose(2, 0, 1)
 
+    #torch_image = torch.from_numpy(image)[None]
+    #image = np.vstack(image).astype(np.float32)
+    #print(image.dtype)
+    image = image.astype(np.float32)
+    #print(image.dtype)
+    
     torch_image = torch.from_numpy(image)[None]
+    
     if HAS_CUDA:
         torch_image = torch_image.cuda()
-
+    #with torch.autocast(device_type="cpu", dtype=torch.float32):
     hm, box, landmark = model(torch_image)
+    
     hm_pool = F.max_pool2d(hm, 3, 1, 1)
-    scores, indices = ((hm == hm_pool).float() * hm).view(1, -1).cpu().topk(1000)
+    scores, indices = ((hm == hm_pool).float() * hm).view(1, -1).cpu().topk(100)
     hm_height, hm_width = hm.shape[2:]
 
     scores = scores.squeeze()
@@ -104,10 +112,14 @@ def camera_demo():
     if HAS_CUDA:
         dbface.cuda()
 
-    dbface.load("model/dbface.pth")
+    #dbface.load("model/dbface.pth")
+    dbface.load("model/dbfaceSmallH.pth")
+    
+    dbface.half()
+    
     cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 480)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 320)
     ok, frame = cap.read()
 
     while ok:
@@ -128,7 +140,7 @@ def camera_demo():
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    image_demo()
+    #image_demo()
     camera_demo()
     
 

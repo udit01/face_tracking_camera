@@ -76,11 +76,12 @@ class ard_connect():
             try:
                 self.parent.current_pan = split_data[0]
                 self.parent.current_tilt = split_data[1]
-                self.parent.update_LCD_display()
+                #self.parent.update_LCD_display()
             except:
                 print("error split data : ", len(split_data))
+                print("Data recieved is: ", dataRecvd)
 
-            #print("Reply Received  " + dataRecvd)
+            print("Reply Received  " + dataRecvd)
 
             waitingForReply = False
 
